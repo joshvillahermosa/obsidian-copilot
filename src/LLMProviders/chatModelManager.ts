@@ -287,6 +287,7 @@ export default class ChatModelManager {
         headers: new Headers({
           Authorization: `Bearer ${await getDecryptedKey(customModel.apiKey || "default-key")}`,
         }),
+        fetch: customModel.enableCors ? safeFetch : undefined,
       },
       [ChatModelProviders.LM_STUDIO]: {
         modelName: modelName,
