@@ -158,10 +158,7 @@ export interface StripFrontmatterOptions {
  * @param options - Options controlling how leading whitespace is handled.
  * @returns The content without the frontmatter block.
  */
-export function stripFrontmatter(
-  content: string,
-  options: StripFrontmatterOptions = {}
-): string {
+export function stripFrontmatter(content: string, options: StripFrontmatterOptions = {}): string {
   const { trimStart = true } = options;
 
   if (content.startsWith("---")) {
@@ -770,10 +767,28 @@ export async function safeFetch(url: string, options: RequestInit = {}): Promise
   // Remove content-length if it exists
   delete (headers as Record<string, string>)["content-length"];
 
-  logInfo("safeFetch request");
+  const requestBodyText = typeof options.body === "string" ? options.body : "";
+  const isGptOss = requestBodyText.includes("gpt-oss:");
+  const isExternal = !url.includes("localhost") && !url.includes("127.0.0.1");
+  logInfo("[CORS Fetch] Request", {
+    url,
+    method: options.method?.toUpperCase() || "POST",
+    external: isExternal,
+    gptOss: isGptOss,
+  });
 
   const method = options.method?.toUpperCase() || "POST";
   const methodsWithBody = ["POST", "PUT", "PATCH"];
+
+  const isOllama = url.includes("ollama");
+  if (isOllama) {
+    logInfo("[OLLAMA API] Request", {
+      url,
+      method,
+      external: isExternal,
+      gptOss: isGptOss,
+    });
+  }
 
   const response = await requestUrl({
     url,
@@ -783,6 +798,14 @@ export async function safeFetch(url: string, options: RequestInit = {}): Promise
     ...(methodsWithBody.includes(method) && { body: options.body?.toString() }),
     throw: false, // Don't throw so we can get the response body
   });
+
+  if (isOllama) {
+    logInfo("[OLLAMA API] Response", {
+      status: response.status,
+      external: isExternal,
+      gptOss: isGptOss,
+    });
+  }
 
   // Check if response is error status
   if (response.status >= 400) {

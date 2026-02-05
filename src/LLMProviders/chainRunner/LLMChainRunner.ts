@@ -120,11 +120,30 @@ export class LLMChainRunner extends BaseChainRunner {
         })
       );
 
+      // Track if this is an Ollama model for logging
+      const isOllamaModel = chatModel.constructor.name === "ChatOllama";
+      let chunkIndex = 0;
+
       for await (const chunk of chatStream) {
         if (abortController.signal.aborted) {
           logInfo("Stream iteration aborted", { reason: abortController.signal.reason });
           break;
         }
+
+        // Log raw chunks from Ollama for debugging
+        if (isOllamaModel) {
+          logInfo(`[OLLAMA CHUNK ${chunkIndex}] Raw chunk:`, chunk);
+          if (chunk.content)
+            logInfo(
+              `  - content: ${typeof chunk.content === "string" ? chunk.content.slice(0, 200) : JSON.stringify(chunk.content).slice(0, 200)}`
+            );
+          if (chunk.additional_kwargs)
+            logInfo(
+              `  - additional_kwargs: ${JSON.stringify(chunk.additional_kwargs).slice(0, 200)}`
+            );
+          chunkIndex++;
+        }
+
         streamer.processChunk(chunk);
       }
     } catch (error: any) {

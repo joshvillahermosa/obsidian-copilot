@@ -23,6 +23,7 @@ import {
   safeFetch,
   withSuppressedTokenWarnings,
 } from "@/utils";
+import { ollamaAwareFetch } from "./ollamaAwareFetch";
 import { HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { ChatCohere } from "@langchain/cohere";
@@ -287,7 +288,8 @@ export default class ChatModelManager {
         headers: new Headers({
           Authorization: `Bearer ${await getDecryptedKey(customModel.apiKey || "default-key")}`,
         }),
-        fetch: customModel.enableCors ? safeFetch : undefined,
+        // Use ollamaAwareFetch to properly handle thinking blocks from cloud Ollama
+        fetch: customModel.enableCors ? ollamaAwareFetch : undefined,
       },
       [ChatModelProviders.LM_STUDIO]: {
         modelName: modelName,
