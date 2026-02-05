@@ -2,6 +2,7 @@ import { StreamingResult, TokenUsage } from "@/types/message";
 import { AIMessage } from "@langchain/core/messages";
 import { detectTruncation, extractTokenUsage } from "./finishReasonDetector";
 import { formatErrorChunk } from "@/utils/toolResultUtils";
+import { logInfo } from "@/logger";
 import {
   NativeToolCall,
   ToolCallChunk,
@@ -91,6 +92,62 @@ export class ThinkBlockStreamer {
       return true; // Indicate we handled a thinking chunk
     }
     return false; // No thinking chunk handled
+  }
+
+  /**
+   * Handle Ollama cloud API thinking format
+   * The cloud Ollama API returns thinking in a 'thinking' field that gets
+   * mixed into the content stream by LangChain's parser.
+   */
+  private handleOllamaThinkingChunk(chunk: any) {
+    // Ollama cloud API puts thinking in additional_kwargs (either 'thinking' or '_thinking')
+    const ollamaThinking = chunk.additional_kwargs?.thinking || chunk.additional_kwargs?._thinking;
+    if (ollamaThinking) {
+      // Skip thinking content if excludeThinking is enabled
+      if (this.excludeThinking) {
+        logInfo("[ThinkBlockStreamer] Skipping Ollama thinking (excludeThinking enabled)");
+        return true;
+      }
+
+      logInfo("[ThinkBlockStreamer] Processing Ollama thinking content:", ollamaThinking);
+
+      if (!this.hasOpenThinkBlock) {
+        this.fullResponse += "\n<think>";
+        this.hasOpenThinkBlock = true;
+      }
+      this.fullResponse += ollamaThinking;
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Handle Ollama thinking markers from ollamaAwareFetch transformation
+   * The fetch wrapper converts thinking blocks to <THINKING>...</THINKING> markers
+   * in the content field so we can detect and extract them here.
+   */
+  private handleOllamaThinkingMarkers(content: string) {
+    // Check if this is a thinking block wrapped in markers
+    const thinkingMatch = content.match(/<THINKING>([\s\S]*?)<\/THINKING>/);
+    if (thinkingMatch) {
+      const thinkingText = thinkingMatch[1];
+      logInfo("[ThinkBlockStreamer] Extracted thinking from markers:", {
+        length: thinkingText.length,
+      });
+
+      if (!this.excludeThinking) {
+        if (!this.hasOpenThinkBlock) {
+          this.fullResponse += "\n<think>";
+          this.hasOpenThinkBlock = true;
+        }
+        this.fullResponse += thinkingText;
+      }
+    } else {
+      // No thinking markers, treat as regular content
+      if (content) {
+        this.fullResponse += content;
+      }
+    }
   }
 
   /**
@@ -191,8 +248,17 @@ export class ThinkBlockStreamer {
         chunk.additional_kwargs.reasoning_details.length > 0) ||
       chunk.additional_kwargs?.reasoning_content; // Deepseek format
 
+    // Check for Ollama thinking format as well (both 'thinking' and '_thinking')
+    const hasOllamaThinking =
+      !!chunk.additional_kwargs?.thinking || !!chunk.additional_kwargs?._thinking;
+
+    // Check if content has <THINKING> markers from ollamaAwareFetch transformation
+    const hasThinkingMarkers =
+      typeof chunk.content === "string" && chunk.content.includes("<THINKING>");
+
     // Close think block BEFORE processing non-thinking content
-    if (this.hasOpenThinkBlock && !isThinkingChunk) {
+    // Don't close if this chunk has thinking markers or other thinking indicators
+    if (this.hasOpenThinkBlock && !isThinkingChunk && !hasOllamaThinking && !hasThinkingMarkers) {
       this.fullResponse += "</think>";
       this.hasOpenThinkBlock = false;
     }
@@ -202,6 +268,12 @@ export class ThinkBlockStreamer {
     if (Array.isArray(chunk.content)) {
       // Claude format with content array
       this.handleClaudeChunk(chunk.content);
+    } else if (typeof chunk.content === "string" && chunk.content.includes("<THINKING>")) {
+      // Ollama thinking blocks wrapped in markers from ollamaAwareFetch
+      this.handleOllamaThinkingMarkers(chunk.content);
+    } else if (hasOllamaThinking) {
+      // Ollama cloud format with thinking field
+      this.handleOllamaThinkingChunk(chunk);
     } else if (chunk.additional_kwargs?.reasoning_content) {
       // Deepseek format with reasoning_content
       this.handleDeepseekChunk(chunk);
