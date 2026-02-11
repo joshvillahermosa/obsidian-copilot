@@ -149,6 +149,10 @@ export interface CustomModel {
   // Amazon Bedrock specific fields
   bedrockRegion?: string;
 
+  // Ollama GPT-OSS specific fields
+  ollamaThinkingLevel?: "low" | "medium" | "high";
+  enableOllamaWebSearch?: boolean;
+
   // OpenAI GPT-5 and O-series specific fields
   reasoningEffort?: ReasoningEffort;
   verbosity?: Verbosity;

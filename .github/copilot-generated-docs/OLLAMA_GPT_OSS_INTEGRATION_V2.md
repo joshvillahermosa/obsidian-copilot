@@ -1,6 +1,6 @@
 # GPT-OSS Ollama Integration: Native Implementation (V2)
 
-**Status**: ⚠️ **REVISED PLAN** - Native Fetch Implementation (Bypassing LangChain)
+**Status**: ⚠️ **REVISED PLAN** - Native Fetch Implementation (Phase 1-4 Complete ✅)
 **Date**: February 11, 2026
 **Last Updated**: February 11, 2026
 **Version**: 2.0 (Complete Architecture Revision)
@@ -328,9 +328,9 @@ All three implementation approaches with LangChain failed:
 
 | Component                 | Purpose                                        | File Location                                                | Status           |
 | ------------------------- | ---------------------------------------------- | ------------------------------------------------------------ | ---------------- |
-| `ollamaUtils.ts`          | Cloud detection, GPT-OSS detection, validation | `src/utils/ollamaUtils.ts`                                   | ❌ **To Create** |
-| `NativeOllamaClient.ts`   | Direct HTTP client for Ollama API              | `src/LLMProviders/NativeOllamaClient.ts`                     | ❌ **To Create** |
-| `ollamaWebSearchTools.ts` | Web search/fetch tool executors                | `src/LLMProviders/chainRunner/utils/ollamaWebSearchTools.ts` | ❌ **To Create** |
+| `ollamaUtils.ts`          | Cloud detection, GPT-OSS detection, validation | `src/utils/ollamaUtils.ts`                                   | ✅ **Complete**  |
+| `NativeOllamaClient.ts`   | Direct HTTP client for Ollama API              | `src/LLMProviders/NativeOllamaClient.ts`                     | ✅ **Complete**  |
+| `ollamaWebSearchTools.ts` | Web search/fetch tool executors                | `src/LLMProviders/chainRunner/utils/ollamaWebSearchTools.ts` | ✅ **Complete**  |
 | `LLMChainRunner.ts`       | Detection & routing logic                      | `src/LLMProviders/chainRunner/LLMChainRunner.ts`             | ✅ **To Update** |
 | `ollamaAwareFetch.ts`     | CORS bypass, thinking transformation           | `src/LLMProviders/ollamaAwareFetch.ts`                       | ✅ **Exists**    |
 | `ThinkBlockStreamer.ts`   | Chunk processing, tool call accumulation       | `src/LLMProviders/chainRunner/utils/ThinkBlockStreamer.ts`   | ✅ **Exists**    |
@@ -1119,163 +1119,163 @@ private async handleNativeOllamaToolCalls(
 
 ## Implementation Plan
 
-### Phase 1: Core Infrastructure ⏳ PENDING
+### Phase 1: Core Infrastructure ✅ COMPLETE
 
 **Objective**: Create utility module and update type definitions
 
 #### Task 1.1: Create Utility Module
 
-- [ ] **File**: `src/utils/ollamaUtils.ts` (new)
-- [ ] **Functions**:
-  - [ ] `isOllamaCloudEndpoint(baseUrl)` - Detects cloud vs local endpoints
-  - [ ] `isGptOssModel(modelName)` - Identifies GPT-OSS models
-  - [ ] `getOllamaModelCapabilities(model)` - Computes all capabilities
-  - [ ] `validateOllamaWebSearch(model)` - Validates web search configuration
-- [ ] **Tests**: `src/utils/ollamaUtils.test.ts`
-  - [ ] Test cloud detection (localhost, 127.0.0.1, external URLs)
-  - [ ] Test GPT-OSS detection (case insensitive)
-  - [ ] Test capability resolution
-  - [ ] Test validation logic (all error/warning cases)
+- [x] **File**: `src/utils/ollamaUtils.ts` (new)
+- [x] **Functions**:
+  - [x] `isOllamaCloudEndpoint(baseUrl)` - Detects cloud vs local endpoints
+  - [x] `isGptOssModel(modelName)` - Identifies GPT-OSS models
+  - [x] `getOllamaModelCapabilities(model)` - Computes all capabilities
+  - [x] `validateOllamaWebSearch(model)` - Validates web search configuration
+- [x] **Tests**: `src/utils/ollamaUtils.test.ts`
+  - [x] Test cloud detection (localhost, 127.0.0.1, external URLs)
+  - [x] Test GPT-OSS detection (case insensitive)
+  - [x] Test capability resolution
+  - [x] Test validation logic (all error/warning cases)
 
 #### Task 1.2: Update Type Definitions
 
-- [ ] **File**: `src/aiParams.ts`
-  - [ ] Add `ollamaThinkingLevel?: "low" | "medium" | "high"` to CustomModel
-  - [ ] Add `enableOllamaWebSearch?: boolean` to CustomModel
-- [ ] **Validation**: Ensure no TypeScript compilation errors
+- [x] **File**: `src/aiParams.ts`
+  - [x] Add `ollamaThinkingLevel?: "low" | "medium" | "high"` to CustomModel
+  - [x] Add `enableOllamaWebSearch?: boolean` to CustomModel
+- [x] **Validation**: Ensure no TypeScript compilation errors
 
 **Completion Criteria**:
 
-- All utility functions working and tested
-- Type definitions updated
-- No breaking changes to existing code
+- ✅ All utility functions working and tested
+- ✅ Type definitions updated
+- ✅ No breaking changes to existing code
 
 ---
 
-### Phase 2: Native Client Implementation ⏳ PENDING
+### Phase 2: Native Client Implementation ✅ COMPLETE
 
 **Objective**: Create NativeOllamaClient with streaming and tool support
 
 #### Task 2.1: Create Client Class
 
-- [ ] **File**: `src/LLMProviders/NativeOllamaClient.ts` (new)
-- [ ] **Constructor**: Accept config with baseUrl, apiKey, modelName, thinkingLevel
-- [ ] **Method**: `async *stream(messages, options): AsyncGenerator<AIMessageChunk>`
-  - [ ] Use `ollamaAwareFetch` for API calls
-  - [ ] Parse NDJSON streaming response
-  - [ ] Yield chunks compatible with ThinkBlockStreamer
-  - [ ] Handle tool_call_chunks properly
-  - [ ] Support AbortSignal for cancellation
-- [ ] **Method**: `async invoke(messages, options): Promise<AIMessage>`
-  - [ ] Collect all chunks from stream()
-  - [ ] Return complete AIMessage with tool_calls array
-- [ ] **Error Handling**: Proper error messages for API failures
+- [x] **File**: `src/LLMProviders/NativeOllamaClient.ts` (new)
+- [x] **Constructor**: Accept config with baseUrl, apiKey, modelName, thinkingLevel
+- [x] **Method**: `async *stream(messages, options): AsyncGenerator<AIMessageChunk>`
+  - [x] Use `ollamaAwareFetch` for API calls
+  - [x] Parse NDJSON streaming response
+  - [x] Yield chunks compatible with ThinkBlockStreamer
+  - [x] Handle tool_call_chunks properly
+  - [x] Support AbortSignal for cancellation
+- [x] **Method**: `async invoke(messages, options): Promise<AIMessage>`
+  - [x] Collect all chunks from stream()
+  - [x] Return complete AIMessage with tool_calls array
+- [x] **Error Handling**: Proper error messages for API failures
 
 #### Task 2.2: Test Native Client
 
-- [ ] **File**: `src/LLMProviders/NativeOllamaClient.test.ts` (new)
-- [ ] **Tests**:
-  - [ ] Test streaming with mock NDJSON responses
-  - [ ] Test invoke method
-  - [ ] Test tool_call_chunks accumulation
-  - [ ] Test error handling (network errors, API errors)
-  - [ ] Test AbortSignal cancellation
+- [x] **File**: `src/LLMProviders/NativeOllamaClient.test.ts` (new)
+- [x] **Tests**:
+  - [x] Test streaming with mock NDJSON responses
+  - [x] Test invoke method
+  - [x] Test tool_call_chunks accumulation
+  - [x] Test error handling (network errors, API errors)
+  - [x] Test AbortSignal cancellation
 
-**Completion Criteria**:
+**Completion Criteria**: ✅
 
-- Client can stream responses from Ollama Cloud
-- Chunks are compatible with ThinkBlockStreamer
-- Tool calls are properly extracted
-- All tests passing
+- ✅ Client can stream responses from Ollama Cloud
+- ✅ Chunks are compatible with ThinkBlockStreamer
+- ✅ Tool calls are properly extracted
+- ✅ All tests passing
 
 ---
 
-### Phase 3: Tool Executors ⏳ PENDING
+### Phase 3: Tool Executors ✅ COMPLETE
 
 **Objective**: Implement web search and web fetch tool execution
 
 #### Task 3.1: Create Tool Executors
 
-- [ ] **File**: `src/LLMProviders/chainRunner/utils/ollamaWebSearchTools.ts` (new)
-- [ ] **Export**: `OLLAMA_WEB_SEARCH_SCHEMA` - Tool schema for web_search
-- [ ] **Export**: `OLLAMA_WEB_FETCH_SCHEMA` - Tool schema for web_fetch
-- [ ] **Function**: `executeOllamaWebSearch(baseUrl, apiKey, query, maxResults)`
-  - [ ] Use `ollamaAwareFetch` to call `/api/web_search`
-  - [ ] Return formatted results
-  - [ ] Handle errors gracefully
-- [ ] **Function**: `executeOllamaWebFetch(baseUrl, apiKey, url)`
-  - [ ] Use `ollamaAwareFetch` to call `/api/web_fetch`
-  - [ ] Return formatted content
-  - [ ] Handle errors gracefully
+- [x] **File**: `src/LLMProviders/chainRunner/utils/ollamaWebSearchTools.ts` (new)
+- [x] **Export**: `OLLAMA_WEB_SEARCH_SCHEMA` - Tool schema for web_search
+- [x] **Export**: `OLLAMA_WEB_FETCH_SCHEMA` - Tool schema for web_fetch
+- [x] **Function**: `executeOllamaWebSearch(baseUrl, apiKey, query, maxResults)`
+  - [x] Use `ollamaAwareFetch` to call `/api/web_search`
+  - [x] Return formatted results
+  - [x] Handle errors gracefully
+- [x] **Function**: `executeOllamaWebFetch(baseUrl, apiKey, url)`
+  - [x] Use `ollamaAwareFetch` to call `/api/web_fetch`
+  - [x] Return formatted content
+  - [x] Handle errors gracefully
 
 #### Task 3.2: Test Tool Executors
 
-- [ ] **File**: `src/LLMProviders/chainRunner/utils/ollamaWebSearchTools.test.ts` (new)
-- [ ] **Tests**:
-  - [ ] Test web_search with mock responses
-  - [ ] Test web_fetch with mock responses
-  - [ ] Test error handling
-  - [ ] Test maxResults clamping (max 10)
+- [x] **File**: `src/LLMProviders/chainRunner/utils/ollamaWebSearchTools.test.ts` (new)
+- [x] **Tests**:
+  - [x] Test web_search with mock responses
+  - [x] Test web_fetch with mock responses
+  - [x] Test error handling
+  - [x] Test maxResults clamping (max 10)
 
-**Completion Criteria**:
+**Completion Criteria**: ✅
 
-- Tool schemas match Ollama documentation
-- Executors can call Ollama Cloud APIs
-- Error handling is robust
-- All tests passing
+- ✅ Tool schemas match Ollama documentation
+- ✅ Executors can call Ollama Cloud APIs
+- ✅ Error handling is robust
+- ✅ All tests passing
 
 ---
 
-### Phase 4: LLMChainRunner Integration ⏳ PENDING
+### Phase 4: LLMChainRunner Integration ✅ COMPLETE
 
 **Objective**: Integrate native client into LLMChainRunner with conditional logic
 
 #### Task 4.1: Add Detection Logic
 
-- [ ] **File**: `src/LLMProviders/chainRunner/LLMChainRunner.ts`
-- [ ] **Import**: `NativeOllamaClient`, tool executors, ollamaUtils
-- [ ] **Before streaming**: Add detection logic
-  - [ ] Check if provider is OLLAMA
-  - [ ] Check if model is GPT-OSS (`isGptOssModel()`)
-  - [ ] Check if endpoint is cloud (`isOllamaCloudEndpoint()`)
-  - [ ] Check if web search is enabled
-  - [ ] Set `shouldUseNativeOllama` flag
+- [x] **File**: `src/LLMProviders/chainRunner/LLMChainRunner.ts`
+- [x] **Import**: `NativeOllamaClient`, tool executors, ollamaUtils
+- [x] **Before streaming**: Add detection logic
+  - [x] Check if provider is OLLAMA
+  - [x] Check if model is GPT-OSS (`isGptOssModel()`)
+  - [x] Check if endpoint is cloud (`isOllamaCloudEndpoint()`)
+  - [x] Check if web search is enabled
+  - [x] Set `shouldUseNativeOllama` flag
 
 #### Task 4.2: Implement Native Client Flow
 
-- [ ] **If shouldUseNativeOllama**:
-  - [ ] Create NativeOllamaClient instance
-  - [ ] Call `client.stream()` with tool schemas
-  - [ ] Process chunks through ThinkBlockStreamer (existing)
-  - [ ] Check `streamer.hasToolCalls()` after streaming
-  - [ ] If has tool calls, execute tool loop (new method)
-- [ ] **Else**:
-  - [ ] Use existing LangChain ChatOllama flow (no changes)
+- [x] **If shouldUseNativeOllama**:
+  - [x] Create NativeOllamaClient instance
+  - [x] Call `client.stream()` with tool schemas
+  - [x] Process chunks through ThinkBlockStreamer (existing)
+  - [x] Check `streamer.hasToolCalls()` after streaming
+  - [x] If has tool calls, execute tool loop (new method)
+- [x] **Else**:
+  - [x] Use existing LangChain ChatOllama flow (no changes)
 
 #### Task 4.3: Implement Tool Loop
 
-- [ ] **New method**: `handleNativeOllamaToolCalls()`
-  - [ ] Extract tool calls from streamer
-  - [ ] For each tool call:
-    - [ ] Execute web_search or web_fetch
-    - [ ] Add ToolMessage to messages array
-  - [ ] Re-invoke client.stream() with tool results
-  - [ ] Process response through new ThinkBlockStreamer
-  - [ ] Repeat until no more tool calls (max 3 iterations)
+- [x] **New method**: `handleNativeOllamaToolCalls()`
+  - [x] Extract tool calls from streamer
+  - [x] For each tool call:
+    - [x] Execute web_search or web_fetch
+    - [x] Add ToolMessage to messages array
+  - [x] Re-invoke client.stream() with tool results
+  - [x] Process response through new ThinkBlockStreamer
+  - [x] Repeat until no more tool calls (max 3 iterations)
 
 #### Task 4.4: Preserve Response Metadata
 
-- [ ] Store thinking level in ResponseMetadata
-- [ ] Maintain compatibility with existing message structure
-- [ ] Ensure ThinkingBadge displays correctly
+- [x] Store thinking level in ResponseMetadata
+- [x] Maintain compatibility with existing message structure
+- [x] Ensure ThinkingBadge displays correctly
 
-**Completion Criteria**:
+**Completion Criteria**: ✅
 
-- Detection logic correctly routes to native client
-- Existing Ollama models (non-GPT-OSS) unaffected
-- Tool loop executes web search correctly
-- Streaming and thinking display work properly
-- All existing tests still pass
+- ✅ Detection logic correctly routes to native client
+- ✅ Existing Ollama models (non-GPT-OSS) unaffected
+- ✅ Tool loop executes web search correctly
+- ✅ Streaming and thinking display work properly
+- ✅ All existing tests still pass
 
 ---
 
@@ -1732,18 +1732,18 @@ describe("Native Ollama GPT-OSS Integration", () => {
 
 ## Next Steps
 
-1. ⏳ **Phase 1**: Create utility module and update type definitions
-2. ⏳ **Phase 2**: Implement NativeOllamaClient with streaming support
-3. ⏳ **Phase 3**: Create web search tool executors
-4. ⏳ **Phase 4**: Integrate native client into LLMChainRunner
+1. ✅ **Phase 1**: Create utility module and update type definitions
+2. ✅ **Phase 2**: Implement NativeOllamaClient with streaming support
+3. ✅ **Phase 3**: Create web search tool executors
+4. ✅ **Phase 4**: Integrate native client into LLMChainRunner
 5. ⏳ **Phase 5**: Comprehensive testing and validation
 6. ⏸️ **Phase 6** (Optional): Documentation and UI enhancements
 
-**Current Status**: Ready to begin Phase 1 implementation
+**Current Status**: Phase 1-4 Complete - Ready to begin Phase 5 (Testing & Validation)
 
 ---
 
 **Last Updated**: February 11, 2026
 **Version**: 2.0
-**Status**: ⚠️ REVISED PLAN - Native Implementation (All Phases Pending)
+**Status**: ⚠️ REVISED PLAN - Native Implementation (Phase 1-4 Complete ✅)
 **Architecture**: Native HTTP client bypassing LangChain for GPT-OSS web search
