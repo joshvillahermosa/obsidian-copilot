@@ -1,6 +1,6 @@
-import { ABORT_REASON, ModelCapability } from "@/constants";
+import { ABORT_REASON, ChatModelProviders, ModelCapability } from "@/constants";
 import { LayerToMessagesConverter } from "@/context/LayerToMessagesConverter";
-import { logInfo } from "@/logger";
+import { logInfo, logWarn } from "@/logger";
 import { getSettings } from "@/settings/model";
 import { ChatMessage } from "@/types/message";
 import { findCustomModel, withSuppressedTokenWarnings } from "@/utils";
@@ -9,6 +9,15 @@ import { loadAndAddChatHistory } from "./utils/chatHistoryUtils";
 import { recordPromptPayload } from "./utils/promptPayloadRecorder";
 import { ThinkBlockStreamer } from "./utils/ThinkBlockStreamer";
 import { getModelKey } from "@/aiParams";
+import { NativeOllamaClient } from "@/LLMProviders/NativeOllamaClient";
+import {
+  OLLAMA_WEB_SEARCH_SCHEMA,
+  OLLAMA_WEB_FETCH_SCHEMA,
+  executeOllamaWebSearch,
+  executeOllamaWebFetch,
+} from "./utils/ollamaWebSearchTools";
+import { isGptOssModel, isOllamaCloudEndpoint } from "@/utils/ollamaUtils";
+import { createToolResultMessage } from "./utils/nativeToolCalling";
 
 export class LLMChainRunner extends BaseChainRunner {
   /**
@@ -113,38 +122,96 @@ export class LLMChainRunner extends BaseChainRunner {
 
       logInfo("Final Request to AI:\n", messages);
 
-      // Stream with abort signal
-      const chatStream = await withSuppressedTokenWarnings(() =>
-        this.chainManager.chatModelManager.getChatModel().stream(messages, {
+      // Detect if we should use native Ollama client for GPT-OSS with web search
+      const settings = getSettings();
+      const modelKey = getModelKey();
+      const customModel = findCustomModel(modelKey, settings.activeModels);
+
+      const shouldUseNativeOllama =
+        customModel.provider === ChatModelProviders.OLLAMA &&
+        isGptOssModel(customModel.name) &&
+        isOllamaCloudEndpoint(customModel.baseUrl) &&
+        customModel.enableOllamaWebSearch === true;
+
+      if (shouldUseNativeOllama) {
+        logInfo("[LLMChainRunner] Using NativeOllamaClient for GPT-OSS web search", {
+          model: customModel.name,
+          baseUrl: customModel.baseUrl,
+          thinkingLevel: customModel.ollamaThinkingLevel,
+        });
+
+        // Create native client
+        const nativeClient = new NativeOllamaClient({
+          baseUrl: customModel.baseUrl!,
+          apiKey: customModel.apiKey!,
+          modelName: customModel.name,
+          thinkingLevel: customModel.ollamaThinkingLevel,
+        });
+
+        // Stream with tools
+        const chatStream = nativeClient.stream(messages, {
+          tools: [OLLAMA_WEB_SEARCH_SCHEMA, OLLAMA_WEB_FETCH_SCHEMA],
           signal: abortController.signal,
-        })
-      );
+        });
 
-      // Track if this is an Ollama model for logging
-      const isOllamaModel = chatModel.constructor.name === "ChatOllama";
-      let chunkIndex = 0;
-
-      for await (const chunk of chatStream) {
-        if (abortController.signal.aborted) {
-          logInfo("Stream iteration aborted", { reason: abortController.signal.reason });
-          break;
+        // Process chunks through ThinkBlockStreamer
+        for await (const chunk of chatStream) {
+          if (abortController.signal.aborted) {
+            logInfo("Stream iteration aborted", { reason: abortController.signal.reason });
+            break;
+          }
+          streamer.processChunk(chunk);
         }
 
-        // Log raw chunks from Ollama for debugging
-        if (isOllamaModel) {
-          logInfo(`[OLLAMA CHUNK ${chunkIndex}] Raw chunk:`, chunk);
-          if (chunk.content)
-            logInfo(
-              `  - content: ${typeof chunk.content === "string" ? chunk.content.slice(0, 200) : JSON.stringify(chunk.content).slice(0, 200)}`
-            );
-          if (chunk.additional_kwargs)
-            logInfo(
-              `  - additional_kwargs: ${JSON.stringify(chunk.additional_kwargs).slice(0, 200)}`
-            );
-          chunkIndex++;
+        // Check for tool calls after streaming completes
+        if (streamer.hasToolCalls()) {
+          await this.handleNativeOllamaToolCalls(
+            nativeClient,
+            messages,
+            streamer,
+            customModel,
+            abortController,
+            updateCurrentAiMessage,
+            excludeThinking
+          );
         }
+      } else {
+        // Use existing LangChain ChatOllama (standard flow)
+        logInfo("[LLMChainRunner] Using LangChain ChatOllama (standard flow)");
 
-        streamer.processChunk(chunk);
+        // Stream with abort signal
+        const chatStream = await withSuppressedTokenWarnings(() =>
+          this.chainManager.chatModelManager.getChatModel().stream(messages, {
+            signal: abortController.signal,
+          })
+        );
+
+        // Track if this is an Ollama model for logging
+        const isOllamaModel = chatModel.constructor.name === "ChatOllama";
+        let chunkIndex = 0;
+
+        for await (const chunk of chatStream) {
+          if (abortController.signal.aborted) {
+            logInfo("Stream iteration aborted", { reason: abortController.signal.reason });
+            break;
+          }
+
+          // Log raw chunks from Ollama for debugging
+          if (isOllamaModel) {
+            logInfo(`[OLLAMA CHUNK ${chunkIndex}] Raw chunk:`, chunk);
+            if (chunk.content)
+              logInfo(
+                `  - content: ${typeof chunk.content === "string" ? chunk.content.slice(0, 200) : JSON.stringify(chunk.content).slice(0, 200)}`
+              );
+            if (chunk.additional_kwargs)
+              logInfo(
+                `  - additional_kwargs: ${JSON.stringify(chunk.additional_kwargs).slice(0, 200)}`
+              );
+            chunkIndex++;
+          }
+
+          streamer.processChunk(chunk);
+        }
       }
     } catch (error: any) {
       // Check if the error is due to abort signal
@@ -182,5 +249,98 @@ export class LLMChainRunner extends BaseChainRunner {
     );
 
     return result.content;
+  }
+
+  /**
+   * Handle tool calls for native Ollama client (ReAct loop)
+   * Executes web search/fetch tools and re-invokes the model with results
+   */
+  private async handleNativeOllamaToolCalls(
+    client: NativeOllamaClient,
+    messages: any[],
+    streamer: ThinkBlockStreamer,
+    customModel: any,
+    abortController: AbortController,
+    updateCurrentAiMessage: (message: string) => void,
+    excludeThinking: boolean
+  ): Promise<void> {
+    const MAX_ITERATIONS = 3;
+    let iteration = 0;
+
+    // Add initial AI message with tool calls
+    const aiMessage = streamer.buildAIMessage();
+    messages.push(aiMessage);
+
+    while (iteration < MAX_ITERATIONS && streamer.hasToolCalls()) {
+      iteration++;
+      logInfo(`[LLMChainRunner] Tool execution iteration ${iteration}`);
+
+      const toolCalls = streamer.getToolCalls();
+
+      for (const toolCall of toolCalls) {
+        logInfo(`[LLMChainRunner] Executing tool: ${toolCall.name}`, toolCall.args);
+
+        let result: any;
+
+        try {
+          if (toolCall.name === "web_search") {
+            result = await executeOllamaWebSearch(
+              customModel.baseUrl!,
+              customModel.apiKey!,
+              toolCall.args.query as string,
+              toolCall.args.max_results as number | undefined
+            );
+          } else if (toolCall.name === "web_fetch") {
+            result = await executeOllamaWebFetch(
+              customModel.baseUrl!,
+              customModel.apiKey!,
+              toolCall.args.url as string
+            );
+          } else {
+            logWarn(`[LLMChainRunner] Unknown tool: ${toolCall.name}`);
+            result = { error: `Unknown tool: ${toolCall.name}` };
+          }
+        } catch (error: any) {
+          logWarn(`[LLMChainRunner] Tool execution failed: ${toolCall.name}`, error);
+          result = { error: `Tool execution failed: ${error.message}` };
+        }
+
+        // Add tool result to messages
+        const toolMessage = createToolResultMessage(
+          toolCall.id,
+          toolCall.name,
+          JSON.stringify(result)
+        );
+        messages.push(toolMessage);
+      }
+
+      // Re-invoke with tool results
+      const newStreamer = new ThinkBlockStreamer(updateCurrentAiMessage, excludeThinking);
+      const chatStream = client.stream(messages, {
+        signal: abortController.signal,
+      });
+
+      for await (const chunk of chatStream) {
+        if (abortController.signal.aborted) {
+          logInfo("Stream iteration aborted during tool loop", {
+            reason: abortController.signal.reason,
+          });
+          break;
+        }
+        newStreamer.processChunk(chunk);
+      }
+
+      // Update streamer for next iteration check
+      streamer = newStreamer;
+
+      if (streamer.hasToolCalls()) {
+        const followUpMessage = streamer.buildAIMessage();
+        messages.push(followUpMessage);
+      }
+    }
+
+    if (iteration >= MAX_ITERATIONS) {
+      logWarn("[LLMChainRunner] Reached max tool call iterations");
+    }
   }
 }

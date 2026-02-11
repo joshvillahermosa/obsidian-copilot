@@ -21,7 +21,7 @@
     "prompt:debug": "node scripts/printPromptDebug.js"
   },
   "keywords": [],
-  "author": "Logan Yang",
+  "author": "Joshua Villaherosa, Logan Yang",
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
