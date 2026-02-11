@@ -30,3 +30,6 @@ data.json
 
 # Development session tracking
 TODO.md
+
+# General Logs
+*.log
