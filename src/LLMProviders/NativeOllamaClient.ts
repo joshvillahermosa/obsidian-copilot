@@ -46,6 +46,69 @@ export class NativeOllamaClient {
   }
 
   /**
+   * Map LangChain message type to Ollama API role format.
+   * LangChain uses: "human", "ai", "system", "tool"
+   * Ollama expects: "user", "assistant", "system", "tool"
+   */
+  private mapMessageTypeToRole(messageType: string): string {
+    switch (messageType) {
+      case "human":
+        return "user";
+      case "ai":
+        return "assistant";
+      case "system":
+        return "system";
+      case "tool":
+        return "tool";
+      default:
+        // Fallback for unexpected types
+        return messageType === "assistant" || messageType === "user" ? messageType : "user";
+    }
+  }
+
+  /**
+   * Normalize message content to string format.
+   * LangChain messages can have content as string or array (for multimodal).
+   * Ollama API expects string only - extract text from arrays.
+   */
+  private normalizeContent(content: any): string {
+    // Handle string content (simple case)
+    if (typeof content === "string") {
+      return content;
+    }
+
+    // Handle array content (multimodal - extract text parts)
+    if (Array.isArray(content)) {
+      return content
+        .map((part) => {
+          if (typeof part === "string") {
+            return part;
+          }
+          if (typeof part === "object" && part !== null) {
+            // Extract text from structured content parts
+            if ("text" in part && typeof part.text === "string") {
+              return part.text;
+            }
+            if ("content" in part && typeof part.content === "string") {
+              return part.content;
+            }
+          }
+          return "";
+        })
+        .join("");
+    }
+
+    // Handle object content with text property
+    if (typeof content === "object" && content !== null && "text" in content) {
+      const textContent = (content as { text?: string }).text;
+      return textContent ?? "";
+    }
+
+    // Fallback: convert to string
+    return String(content || "");
+  }
+
+  /**
    * Stream chat completion from Ollama Cloud.
    * Yields AIMessageChunk objects compatible with ThinkBlockStreamer.
    */
@@ -63,13 +126,23 @@ export class NativeOllamaClient {
     const requestBody = {
       model: this.modelName,
       messages: messages.map((m) => {
+        // Safely get message type with fallback
+        const messageType =
+          typeof m._getType === "function" ? m._getType() : ((m as any).role ?? "user");
+
+        // Map LangChain types to Ollama role format
+        const role = this.mapMessageTypeToRole(messageType);
+
+        // Normalize content to string (handle arrays from multimodal messages)
+        const content = this.normalizeContent(m.content);
+
         const baseMsg: any = {
-          role: m._getType(),
-          content: m.content,
+          role,
+          content,
         };
 
         // Add tool_name for tool messages
-        if (m._getType() === "tool" && (m as any).name) {
+        if (messageType === "tool" && (m as any).name) {
           baseMsg.tool_name = (m as any).name;
         }
 
@@ -84,6 +157,9 @@ export class NativeOllamaClient {
       hasTools: !!requestBody.tools,
       toolCount: requestBody.tools?.length,
       think: requestBody.think,
+      messageCount: requestBody.messages.length,
+      messageTypes: requestBody.messages.map((m: any) => m.role),
+      toolNames: requestBody.tools?.map((t: any) => t.function?.name),
     });
 
     // Use ollamaAwareFetch for CORS bypass and thinking transformation
@@ -143,6 +219,14 @@ export class NativeOllamaClient {
                 args: JSON.stringify(tc.function?.arguments || {}),
               })) || [],
           });
+
+          // Log tool calls for debugging
+          if (json.message?.tool_calls && json.message.tool_calls.length > 0) {
+            logInfo("[NativeOllamaClient] Received tool calls in chunk", {
+              toolCount: json.message.tool_calls.length,
+              tools: json.message.tool_calls.map((tc: any) => tc.function?.name),
+            });
+          }
         } catch (error) {
           logError("[NativeOllamaClient] Failed to parse chunk", { line, error });
         }

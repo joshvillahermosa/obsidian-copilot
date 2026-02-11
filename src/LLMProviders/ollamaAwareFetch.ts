@@ -136,9 +136,16 @@ export async function ollamaAwareFetch(url: string, options: RequestInit = {}): 
       }
     } catch (error) {
       logInfo("[OLLAMA API Transform] Error processing response", error);
-      // Fall through to return original response
+      // Fall through to convert to Response below
     }
   }
 
-  return response as any;
+  // Convert Obsidian requestUrl response to standard Response object
+  // requestUrl returns {text: string, status: number, headers: Record<string, string>}
+  // We need Response API with .text() method, .body stream, etc.
+  const responseText = (response.text || "").toString();
+  return new Response(responseText, {
+    status: response.status,
+    headers: response.headers,
+  }) as any;
 }

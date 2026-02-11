@@ -34,6 +34,22 @@ export const DEFAULT_SYSTEM_PROMPT = `You are Obsidian Copilot, a helpful assist
   14. YouTube URLs: If the user provides YouTube URLs in their message, transcriptions will be automatically fetched and provided to you. You don't need to do anything special - just use the transcription content if available.
   15. For markdown lists, always use '- ' (hyphen followed by exactly one space) for bullet points, with no leading spaces before the hyphen. Never use '*' (asterisk) for bullets.`;
 
+export const WEB_SEARCH_SYSTEM_PROMPT = `
+
+## Web Search Capabilities
+
+You have access to real-time web search tools. Use them proactively when:
+- The user asks about current events, news, or time-sensitive information
+- The user asks about weather, stock prices, or other real-time data
+- The query requires information beyond what's in the vault context
+- You need to verify or supplement information with current web data
+
+Available tools:
+- web_search: Search the web for current information (use for general queries)
+- web_fetch: Fetch content from a specific URL (use when you have a target URL)
+
+IMPORTANT: Do NOT say you cannot access real-time information. You CAN and SHOULD use these tools when appropriate.`;
+
 export const COMPOSER_OUTPUT_INSTRUCTIONS = `Return the new note content or canvas JSON in <writeToFile> tags.
 
   # Steps to find the the target notes
