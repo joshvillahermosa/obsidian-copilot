@@ -1,4 +1,9 @@
-import { ABORT_REASON, ChatModelProviders, ModelCapability } from "@/constants";
+import {
+  ABORT_REASON,
+  ChatModelProviders,
+  ModelCapability,
+  WEB_SEARCH_SYSTEM_PROMPT,
+} from "@/constants";
 import { LayerToMessagesConverter } from "@/context/LayerToMessagesConverter";
 import { logInfo, logWarn } from "@/logger";
 import { getSettings } from "@/settings/model";
@@ -140,6 +145,13 @@ export class LLMChainRunner extends BaseChainRunner {
           thinkingLevel: customModel.ollamaThinkingLevel,
         });
 
+        // Inject web search instructions into system message
+        const systemMsg = messages.find((m: any) => m.role === "system");
+        if (systemMsg) {
+          systemMsg.content += WEB_SEARCH_SYSTEM_PROMPT;
+          logInfo("[LLMChainRunner] Added web search instructions to system prompt");
+        }
+
         // Create native client
         const nativeClient = new NativeOllamaClient({
           baseUrl: customModel.baseUrl!,
@@ -164,6 +176,11 @@ export class LLMChainRunner extends BaseChainRunner {
         }
 
         // Check for tool calls after streaming completes
+        logInfo("[LLMChainRunner] Stream complete, checking for tool calls", {
+          hasToolCalls: streamer.hasToolCalls(),
+          toolCallCount: streamer.getToolCalls().length,
+        });
+
         if (streamer.hasToolCalls()) {
           await this.handleNativeOllamaToolCalls(
             nativeClient,
