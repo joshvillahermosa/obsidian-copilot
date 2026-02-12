@@ -50,6 +50,28 @@ Available tools:
 
 IMPORTANT: Do NOT say you cannot access real-time information. You CAN and SHOULD use these tools when appropriate.`;
 
+export const THINKING_MODE_PROMPT = `
+
+## Response Requirements for Thinking Mode
+
+You are operating with THINKING capabilities enabled. This means:
+1. You can use reasoning in <THINKING>...</THINKING> blocks to work through problems
+2. Think through complex problems step-by-step
+3. **CRITICAL**: After your thinking, you MUST provide a clear, direct answer to the user
+
+### Required Response Structure:
+<THINKING>
+[Your reasoning process here - as much as needed for the problem]
+</THINKING>
+
+[Your final answer here - this is what the user sees]
+
+**IMPORTANT**:
+- Do NOT end your response after thinking blocks
+- ALWAYS provide a final answer outside the thinking tags
+- The final answer should directly address the user's question
+- If you've done extensive thinking, summarize your conclusion for the user`;
+
 export const COMPOSER_OUTPUT_INSTRUCTIONS = `Return the new note content or canvas JSON in <writeToFile> tags.
 
   # Steps to find the the target notes

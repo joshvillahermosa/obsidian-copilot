@@ -399,4 +399,50 @@ export class ThinkBlockStreamer {
       tokenUsage: this.tokenUsage,
     };
   }
+
+  /**
+   * Get current content without closing (useful for mid-stream analysis)
+   */
+  getContent(): string {
+    return this.fullResponse;
+  }
+
+  /**
+   * Set content directly (useful for recovery/combining responses)
+   */
+  setContent(content: string): void {
+    this.fullResponse = content;
+    this.updateCurrentAiMessage(this.fullResponse);
+  }
+
+  /**
+   * Analyze the response to determine thinking vs content ratio
+   * Useful for detecting thinking-only responses
+   */
+  analyzeContent(): {
+    totalLength: number;
+    thinkingLength: number;
+    contentLength: number;
+    thinkingRatio: number;
+  } {
+    const content = this.fullResponse;
+
+    // Extract thinking content
+    const thinkingMatches = content.matchAll(/<think>([\s\S]*?)<\/think>/g);
+    let thinkingLength = 0;
+    for (const match of thinkingMatches) {
+      thinkingLength += match[1].length;
+    }
+
+    // Calculate non-thinking content
+    const contentWithoutThinking = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    const contentLength = contentWithoutThinking.length;
+
+    return {
+      totalLength: content.length,
+      thinkingLength,
+      contentLength,
+      thinkingRatio: thinkingLength / Math.max(content.length, 1),
+    };
+  }
 }

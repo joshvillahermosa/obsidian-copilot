@@ -3,6 +3,7 @@ import {
   ChatModelProviders,
   ModelCapability,
   WEB_SEARCH_SYSTEM_PROMPT,
+  THINKING_MODE_PROMPT,
 } from "@/constants";
 import { LayerToMessagesConverter } from "@/context/LayerToMessagesConverter";
 import { logInfo, logWarn } from "@/logger";
@@ -145,11 +146,20 @@ export class LLMChainRunner extends BaseChainRunner {
           thinkingLevel: customModel.ollamaThinkingLevel,
         });
 
-        // Inject web search instructions into system message
+        // Inject web search and thinking mode instructions into system message
         const systemMsg = messages.find((m: any) => m.role === "system");
         if (systemMsg) {
           systemMsg.content += WEB_SEARCH_SYSTEM_PROMPT;
-          logInfo("[LLMChainRunner] Added web search instructions to system prompt");
+
+          // Add thinking mode guidance for any thinking level
+          if (customModel.ollamaThinkingLevel) {
+            systemMsg.content += THINKING_MODE_PROMPT;
+            logInfo("[LLMChainRunner] Added THINKING MODE requirements to system prompt", {
+              thinkingLevel: customModel.ollamaThinkingLevel,
+            });
+          }
+
+          logInfo("[LLMChainRunner] Added web search and thinking instructions to system prompt");
         }
 
         // Create native client
@@ -195,6 +205,28 @@ export class LLMChainRunner extends BaseChainRunner {
           // Use the final streamer for response (has actual content)
           streamer = finalStreamer;
           logInfo("[LLMChainRunner] Using final streamer after tool execution");
+        }
+
+        // Detect thinking-only responses and attempt recovery for any thinking level
+        if (customModel.ollamaThinkingLevel && !abortController.signal.aborted) {
+          const needsRecovery = this.detectThinkingOnlyResponse(
+            streamer,
+            customModel.ollamaThinkingLevel
+          );
+          if (needsRecovery) {
+            logWarn("[LLMChainRunner] Detected thinking-only response, attempting recovery", {
+              thinkingLevel: customModel.ollamaThinkingLevel,
+            });
+            const recoveryStreamer = await this.recoverFromThinkingOnlyResponse(
+              nativeClient,
+              messages,
+              streamer,
+              abortController,
+              updateCurrentAiMessage,
+              excludeThinking
+            );
+            streamer = recoveryStreamer;
+          }
         }
       } else {
         // Use existing LangChain ChatOllama (standard flow)
@@ -270,6 +302,158 @@ export class LLMChainRunner extends BaseChainRunner {
     );
 
     return result.content;
+  }
+
+  /**
+   * Detect if the response is primarily thinking with little or no final answer.
+   * This can happen at any thinking level when the model gets absorbed in reasoning.
+   * Detection thresholds are adjusted based on thinking level.
+   */
+  private detectThinkingOnlyResponse(
+    streamer: ThinkBlockStreamer,
+    thinkingLevel?: string
+  ): boolean {
+    const analysis = streamer.analyzeContent();
+
+    logInfo("[LLMChainRunner] Response analysis", {
+      totalLength: analysis.totalLength,
+      thinkingLength: analysis.thinkingLength,
+      finalContentLength: analysis.contentLength,
+      thinkingRatio: (analysis.thinkingRatio * 100).toFixed(1) + "%",
+      hasFinalContent: analysis.contentLength > 0,
+      thinkingLevel,
+    });
+
+    // Adjust thresholds based on thinking level
+    // Lower thinking levels should have stricter detection (less thinking expected)
+    let minThinkingChars = 500;
+    let maxFinalChars = 100;
+    let minThinkingRatio = 0.9;
+
+    if (thinkingLevel === "low") {
+      // Low thinking: Even moderate thinking without answer is unusual
+      minThinkingChars = 200;
+      maxFinalChars = 50;
+      minThinkingRatio = 0.85;
+    } else if (thinkingLevel === "medium") {
+      // Medium thinking: More thinking expected, but still needs answer
+      minThinkingChars = 350;
+      maxFinalChars = 75;
+      minThinkingRatio = 0.88;
+    }
+    // High thinking uses default values (most lenient)
+
+    // Consider it thinking-only if:
+    // 1. There's substantial thinking content (threshold varies by level)
+    // 2. Final answer is very short or non-existent (threshold varies by level)
+    // 3. Thinking comprises high % of total response (threshold varies by level)
+    const isThinkingOnly =
+      analysis.thinkingLength > minThinkingChars &&
+      analysis.contentLength < maxFinalChars &&
+      analysis.thinkingRatio > minThinkingRatio;
+
+    if (isThinkingOnly) {
+      logWarn("[LLMChainRunner] Detected thinking-only response pattern", {
+        thinkingChars: analysis.thinkingLength,
+        finalAnswerChars: analysis.contentLength,
+        thinkingLevel,
+        thresholds: { minThinkingChars, maxFinalChars, minThinkingRatio },
+        verdict: "NEEDS_RECOVERY",
+      });
+    }
+
+    return isThinkingOnly;
+  }
+
+  /**
+   * Recover from thinking-only response by prompting the model to provide a final answer.
+   * Adds a system message requesting the final answer and re-invokes the model.
+   */
+  private async recoverFromThinkingOnlyResponse(
+    client: NativeOllamaClient,
+    messages: any[],
+    currentStreamer: ThinkBlockStreamer,
+    abortController: AbortController,
+    updateCurrentAiMessage: (message: string) => void,
+    excludeThinking: boolean
+  ): Promise<ThinkBlockStreamer> {
+    logInfo("[LLMChainRunner] Attempting recovery from thinking-only response");
+
+    // Get the current content (without closing the streamer)
+    const currentContent = currentStreamer.getContent();
+
+    // Add the thinking-only response to conversation history
+    messages.push({
+      role: "assistant",
+      content: currentContent,
+    });
+
+    // Add recovery prompt asking for final answer
+    messages.push({
+      role: "user",
+      content:
+        "Please provide your final answer to my question. You've done the thinking, now I need the conclusion.",
+    });
+
+    logInfo("[LLMChainRunner] Invoking model with recovery prompt", {
+      totalMessages: messages.length,
+    });
+
+    try {
+      const chatStream = client.stream(messages, {
+        signal: abortController.signal,
+      });
+
+      // Accumulate recovery content
+      let recoveryContent = "";
+
+      for await (const chunk of chatStream) {
+        if (abortController.signal.aborted) {
+          logInfo("Recovery stream aborted", { reason: abortController.signal.reason });
+          break;
+        }
+
+        // Extract content from chunk (handle both string and array content)
+        let chunkContent = "";
+        if (typeof chunk.content === "string") {
+          chunkContent = chunk.content;
+        } else if (Array.isArray(chunk.content)) {
+          // Handle Claude-style content arrays
+          for (const item of chunk.content) {
+            if (item.type === "text" && item.text) {
+              chunkContent += item.text;
+            }
+          }
+        }
+
+        if (chunkContent) {
+          recoveryContent += chunkContent;
+          // Show combined content in real-time
+          updateCurrentAiMessage(currentContent + "\n\n" + recoveryContent);
+        }
+      }
+
+      if (recoveryContent.trim().length > 10) {
+        logInfo("[LLMChainRunner] Recovery successful - got final answer", {
+          recoveryLength: recoveryContent.length,
+        });
+
+        // Create a new streamer with the combined content
+        const combinedStreamer = new ThinkBlockStreamer(updateCurrentAiMessage, excludeThinking);
+        const combinedContent = currentContent + "\n\n" + recoveryContent;
+        combinedStreamer.setContent(combinedContent);
+
+        return combinedStreamer;
+      } else {
+        logWarn(
+          "[LLMChainRunner] Recovery attempt did not produce sufficient content, using original"
+        );
+        return currentStreamer;
+      }
+    } catch (error: any) {
+      logWarn("[LLMChainRunner] Recovery attempt failed", error);
+      return currentStreamer;
+    }
   }
 
   /**
