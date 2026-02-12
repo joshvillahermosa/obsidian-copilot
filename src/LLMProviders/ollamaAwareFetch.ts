@@ -87,6 +87,7 @@ export async function ollamaAwareFetch(url: string, options: RequestInit = {}): 
               logInfo("[OLLAMA API Transform] Separating thinking", {
                 thinkingLen: thinkingText.length,
                 contentLen: contentText.length,
+                contentPreview: contentText.substring(0, 50),
               });
 
               // Emit thinking as a separate line with a marker so we can detect it

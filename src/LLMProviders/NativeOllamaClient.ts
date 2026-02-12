@@ -141,9 +141,26 @@ export class NativeOllamaClient {
           content,
         };
 
-        // Add tool_name for tool messages
-        if (messageType === "tool" && (m as any).name) {
-          baseMsg.tool_name = (m as any).name;
+        // Add tool_calls for AI messages (required for tool execution loop)
+        if (messageType === "ai" && (m as any).tool_calls && (m as any).tool_calls.length > 0) {
+          baseMsg.tool_calls = (m as any).tool_calls.map((tc: any) => ({
+            id: tc.id || tc.name, // Use name as fallback ID if not present
+            type: "function",
+            function: {
+              name: tc.name,
+              arguments: tc.args,
+            },
+          }));
+        }
+
+        // Add tool_call_id for tool result messages (required to link back to tool call)
+        if (messageType === "tool") {
+          if ((m as any).tool_call_id) {
+            baseMsg.tool_call_id = (m as any).tool_call_id;
+          }
+          if ((m as any).name) {
+            baseMsg.name = (m as any).name;
+          }
         }
 
         return baseMsg;
@@ -160,6 +177,24 @@ export class NativeOllamaClient {
       messageCount: requestBody.messages.length,
       messageTypes: requestBody.messages.map((m: any) => m.role),
       toolNames: requestBody.tools?.map((t: any) => t.function?.name),
+    });
+
+    // Log full message details for debugging
+    logInfo("[NativeOllamaClient] Full messages:", {
+      messages: requestBody.messages.map((m: any, idx: number) => ({
+        index: idx,
+        role: m.role,
+        contentPreview:
+          typeof m.content === "string"
+            ? m.content.substring(0, 200)
+            : JSON.stringify(m.content).substring(0, 200),
+        hasToolCalls: !!m.tool_calls,
+        toolCallCount: m.tool_calls?.length,
+        toolCallIds: m.tool_calls?.map((tc: any) => tc.id),
+        hasToolCallId: !!m.tool_call_id,
+        toolCallId: m.tool_call_id,
+        toolName: m.name,
+      })),
     });
 
     // Use ollamaAwareFetch for CORS bypass and thinking transformation
@@ -200,8 +235,24 @@ export class NativeOllamaClient {
 
           // Handle done signal
           if (json.done) {
-            logInfo("[NativeOllamaClient] Stream complete");
+            logInfo("[NativeOllamaClient] Stream complete", {
+              totalTokens: json.eval_count,
+              promptTokens: json.prompt_eval_count,
+            });
             break;
+          }
+
+          // Log raw chunk for debugging (every 10th chunk to avoid spam)
+          if (Math.random() < 0.1) {
+            logInfo("[NativeOllamaClient] Raw chunk sample", {
+              hasContent: !!json.message?.content,
+              contentLength: json.message?.content?.length || 0,
+              contentPreview: json.message?.content?.substring(0, 100),
+              hasThinking: !!json.message?.thinking,
+              thinkingLength: json.message?.thinking?.length || 0,
+              hasToolCalls: !!json.message?.tool_calls,
+              toolCallCount: json.message?.tool_calls?.length || 0,
+            });
           }
 
           // Yield chunk compatible with ThinkBlockStreamer

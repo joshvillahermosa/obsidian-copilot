@@ -110,7 +110,7 @@ export class LLMChainRunner extends BaseChainRunner {
       );
     }
 
-    const streamer = new ThinkBlockStreamer(updateCurrentAiMessage, excludeThinking);
+    let streamer = new ThinkBlockStreamer(updateCurrentAiMessage, excludeThinking);
 
     try {
       // Construct messages using envelope or legacy approach
@@ -182,7 +182,8 @@ export class LLMChainRunner extends BaseChainRunner {
         });
 
         if (streamer.hasToolCalls()) {
-          await this.handleNativeOllamaToolCalls(
+          // Get the final streamer with complete content after tool execution
+          const finalStreamer = await this.handleNativeOllamaToolCalls(
             nativeClient,
             messages,
             streamer,
@@ -191,6 +192,9 @@ export class LLMChainRunner extends BaseChainRunner {
             updateCurrentAiMessage,
             excludeThinking
           );
+          // Use the final streamer for response (has actual content)
+          streamer = finalStreamer;
+          logInfo("[LLMChainRunner] Using final streamer after tool execution");
         }
       } else {
         // Use existing LangChain ChatOllama (standard flow)
@@ -271,6 +275,7 @@ export class LLMChainRunner extends BaseChainRunner {
   /**
    * Handle tool calls for native Ollama client (ReAct loop)
    * Executes web search/fetch tools and re-invokes the model with results
+   * Returns the final streamer with complete content
    */
   private async handleNativeOllamaToolCalls(
     client: NativeOllamaClient,
@@ -280,7 +285,7 @@ export class LLMChainRunner extends BaseChainRunner {
     abortController: AbortController,
     updateCurrentAiMessage: (message: string) => void,
     excludeThinking: boolean
-  ): Promise<void> {
+  ): Promise<ThinkBlockStreamer> {
     const MAX_ITERATIONS = 3;
     let iteration = 0;
 
@@ -328,15 +333,35 @@ export class LLMChainRunner extends BaseChainRunner {
           toolCall.name,
           JSON.stringify(result)
         );
+        logInfo(`[LLMChainRunner] Created tool result message`, {
+          toolCallId: toolCall.id,
+          toolName: toolCall.name,
+          resultPreview: JSON.stringify(result).substring(0, 300),
+          resultLength: JSON.stringify(result).length,
+        });
         messages.push(toolMessage);
       }
 
-      // Re-invoke with tool results
-      const newStreamer = new ThinkBlockStreamer(updateCurrentAiMessage, excludeThinking);
+      // Re-invoke with tool results using the SAME streamer to accumulate content
+      logInfo("[LLMChainRunner] Re-invoking model with tool results", {
+        totalMessages: messages.length,
+        iteration,
+        lastThreeRoles: messages.slice(-3).map((m: any) => ({
+          role: m._getType ? m._getType() : m.role,
+          hasToolCalls: !!(m as any).tool_calls,
+          isToolResult: m._getType ? m._getType() === "tool" : false,
+        })),
+      });
+
+      // Clear previous tool calls from streamer before next iteration
+      // (new stream will populate with fresh tool calls if model makes more)
+      streamer.clearToolCalls();
+
       const chatStream = client.stream(messages, {
         signal: abortController.signal,
       });
 
+      // Process chunks into the SAME streamer (accumulates content)
       for await (const chunk of chatStream) {
         if (abortController.signal.aborted) {
           logInfo("Stream iteration aborted during tool loop", {
@@ -344,20 +369,30 @@ export class LLMChainRunner extends BaseChainRunner {
           });
           break;
         }
-        newStreamer.processChunk(chunk);
+        streamer.processChunk(chunk);
       }
 
-      // Update streamer for next iteration check
-      streamer = newStreamer;
-
+      // Check if model made more tool calls (multi-step reasoning)
       if (streamer.hasToolCalls()) {
         const followUpMessage = streamer.buildAIMessage();
         messages.push(followUpMessage);
+        logInfo("[LLMChainRunner] Model made additional tool calls, continuing loop", {
+          toolCallCount: streamer.getToolCalls().length,
+          iteration,
+        });
       }
     }
 
     if (iteration >= MAX_ITERATIONS) {
       logWarn("[LLMChainRunner] Reached max tool call iterations");
     }
+
+    logInfo("[LLMChainRunner] Tool loop complete", {
+      totalIterations: iteration,
+      hasMoreToolCalls: streamer.hasToolCalls(),
+    });
+
+    // Return the streamer that accumulated all iterations
+    return streamer;
   }
 }

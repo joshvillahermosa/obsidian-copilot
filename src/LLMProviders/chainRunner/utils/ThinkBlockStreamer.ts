@@ -72,7 +72,17 @@ export class ThinkBlockStreamer {
   private handleDeepseekChunk(chunk: any) {
     // Handle standard string content
     if (typeof chunk.content === "string") {
+      logInfo("[ThinkBlockStreamer] handleDeepseekChunk processing string content:", {
+        length: chunk.content.length,
+        preview: chunk.content.substring(0, 100),
+        contentType: typeof chunk.content,
+      });
       this.fullResponse += chunk.content;
+    } else if (chunk.content) {
+      logInfo("[ThinkBlockStreamer] handleDeepseekChunk received non-string content:", {
+        contentType: typeof chunk.content,
+        content: chunk.content,
+      });
     }
 
     // Handle deepseek reasoning/thinking content
@@ -142,9 +152,31 @@ export class ThinkBlockStreamer {
         }
         this.fullResponse += thinkingText;
       }
+
+      // Extract and process any content after the thinking markers
+      // This handles cases where thinking and content are in the same chunk
+      const remainingContent = content.substring(thinkingMatch.index! + thinkingMatch[0].length);
+      if (remainingContent.trim()) {
+        // Close think block before adding content
+        if (this.hasOpenThinkBlock) {
+          this.fullResponse += "</think>";
+          this.hasOpenThinkBlock = false;
+        }
+        logInfo("[ThinkBlockStreamer] Found content after thinking markers:", {
+          length: remainingContent.length,
+          preview: remainingContent.substring(0, 100),
+        });
+        this.fullResponse += remainingContent;
+      } else {
+        logInfo("[ThinkBlockStreamer] No content after thinking markers (thinking-only chunk)");
+      }
     } else {
       // No thinking markers, treat as regular content
       if (content) {
+        logInfo("[ThinkBlockStreamer] Processing regular content (no thinking markers):", {
+          length: content.length,
+          preview: content.substring(0, 100),
+        });
         this.fullResponse += content;
       }
     }
@@ -267,21 +299,33 @@ export class ThinkBlockStreamer {
     // Route based on the actual chunk format
     if (Array.isArray(chunk.content)) {
       // Claude format with content array
+      logInfo("[ThinkBlockStreamer] Routing to handleClaudeChunk");
       this.handleClaudeChunk(chunk.content);
     } else if (typeof chunk.content === "string" && chunk.content.includes("<THINKING>")) {
       // Ollama thinking blocks wrapped in markers from ollamaAwareFetch
+      logInfo("[ThinkBlockStreamer] Routing to handleOllamaThinkingMarkers (has <THINKING>)");
       this.handleOllamaThinkingMarkers(chunk.content);
     } else if (hasOllamaThinking) {
       // Ollama cloud format with thinking field
+      logInfo("[ThinkBlockStreamer] Routing to handleOllamaThinkingChunk (hasOllamaThinking)");
       this.handleOllamaThinkingChunk(chunk);
     } else if (chunk.additional_kwargs?.reasoning_content) {
       // Deepseek format with reasoning_content
+      logInfo("[ThinkBlockStreamer] Routing to handleDeepseekChunk (reasoning_content)");
       this.handleDeepseekChunk(chunk);
     } else if (isThinkingChunk) {
       // OpenRouter format with delta.reasoning or reasoning_details
+      logInfo("[ThinkBlockStreamer] Routing to handleOpenRouterChunk (isThinkingChunk)");
       this.handleOpenRouterChunk(chunk);
     } else {
       // Default case: regular content or other formats
+      logInfo("[ThinkBlockStreamer] Routing to handleDeepseekChunk (default)", {
+        hasContent: !!chunk.content,
+        contentType: typeof chunk.content,
+        contentLength: chunk.content?.length,
+        contentPreview:
+          typeof chunk.content === "string" ? chunk.content.substring(0, 50) : chunk.content,
+      });
       this.handleDeepseekChunk(chunk);
     }
 
@@ -310,6 +354,15 @@ export class ThinkBlockStreamer {
    */
   hasToolCalls(): boolean {
     return this.toolCallChunks.size > 0 || this.accumulatedToolCalls.length > 0;
+  }
+
+  /**
+   * Clear accumulated tool calls after they've been processed.
+   * Call this before processing a new stream in multi-turn tool calling.
+   */
+  clearToolCalls(): void {
+    this.toolCallChunks.clear();
+    this.accumulatedToolCalls = [];
   }
 
   /**
