@@ -309,7 +309,33 @@ const ChatSingleMessage: React.FC<ChatSingleMessageProps> = ({
             unClosedRegex,
             (_match, partialContent) => `<div style="${detailsStyle}">
               <div style="${summaryStyle}">${streamingSummaryText}</div>
-              <div class="tw-text-muted" style="${contentStyle}">${partialContent.trim()}</div>
+              <div class="tw-text-muted" style="${contentStyle}">
+                ${partialContent.trim()}
+                <div class="copilot-thinking-indicator" style="font-style: italic; color: var(--text-faint); margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  <span>thinking</span>
+                  <span class="copilot-thinking-dots"><span>.</span><span>.</span><span>.</span></span>
+                </div>
+              </div>
+              <style>
+                @keyframes copilot-thinking-blink {
+                  0%, 20% { opacity: 0; }
+                  40% { opacity: 1; }
+                  60%, 100% { opacity: 0; }
+                }
+                .copilot-thinking-dots span {
+                  animation: copilot-thinking-blink 1.4s infinite;
+                  animation-fill-mode: both;
+                }
+                .copilot-thinking-dots span:nth-child(1) {
+                  animation-delay: 0s;
+                }
+                .copilot-thinking-dots span:nth-child(2) {
+                  animation-delay: 0.2s;
+                }
+                .copilot-thinking-dots span:nth-child(3) {
+                  animation-delay: 0.4s;
+                }
+              </style>
             </div>`
           );
           return content;
