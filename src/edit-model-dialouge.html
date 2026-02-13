@@ -1,0 +1,597 @@
+<div class="modal">
+  <div class="modal-close-button mod-raised clickable-icon">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="svg-icon lucide-x"
+    >
+      <path d="M18 6 6 18"></path>
+      <path d="m6 6 12 12"></path>
+    </svg>
+  </div>
+  <div class="modal-header"><div class="modal-title">Model Settings - gpt-oss:120b-cloud</div></div>
+  <div class="modal-content">
+    <div class="tw-space-y-3 tw-p-4">
+      <div class="tw-space-y-3">
+        <div class="tw-space-y-2">
+          <label
+            class="tw-text-sm tw-font-medium tw-leading-none peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70"
+            >Model Name <span class="tw-text-error">*</span></label
+          ><input
+            type="text"
+            class="!tw-h-9 !tw-min-w-[50px] !tw-rounded-md !tw-border tw-border-solid tw-border-border !tw-bg-transparent !tw-px-3 !tw-py-1 !tw-text-sm !tw-transition-colors md:!tw-text-base focus-visible:!tw-shadow-sm focus-visible:!tw-outline-none focus-visible:!tw-ring-1 focus-visible:!tw-ring-ring placeholder:tw-text-sm tw-flex tw-w-full tw-shadow-sm placeholder:tw-text-muted disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+            placeholder="Enter model name"
+            value="gpt-oss:120b-cloud"
+          />
+        </div>
+        <div class="tw-space-y-2">
+          <label
+            class="tw-text-sm tw-font-medium tw-leading-none peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70"
+            ><div class="tw-flex tw-items-center tw-gap-1.5">
+              <span class="tw-leading-none">Display Name</span
+              ><button
+                class="tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-rounded-md tw-text-xs tw-inline-flex tw-size-6 tw-items-center tw-justify-center tw-p-0 hover:tw-bg-transparent hover:tw-text-normal"
+                data-state="closed"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-circle-help tw-size-4"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <path d="M12 17h.01"></path>
+                </svg>
+              </button>
+            </div> </label
+          ><input
+            type="text"
+            class="!tw-h-9 !tw-min-w-[50px] !tw-rounded-md !tw-border tw-border-solid tw-border-border !tw-bg-transparent !tw-px-3 !tw-py-1 !tw-text-sm !tw-transition-colors md:!tw-text-base focus-visible:!tw-shadow-sm focus-visible:!tw-outline-none focus-visible:!tw-ring-1 focus-visible:!tw-ring-ring placeholder:tw-text-sm tw-flex tw-w-full tw-shadow-sm placeholder:tw-text-muted disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+            placeholder="Custom display name (optional)"
+            value=""
+          />
+        </div>
+        <div class="tw-space-y-2">
+          <label
+            class="tw-text-sm tw-font-medium tw-leading-none peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70"
+            >Provider </label
+          ><input
+            type="text"
+            class="!tw-h-9 !tw-min-w-[50px] !tw-rounded-md !tw-border tw-border-solid tw-border-border !tw-bg-transparent !tw-px-3 !tw-py-1 !tw-text-sm !tw-transition-colors md:!tw-text-base focus-visible:!tw-shadow-sm focus-visible:!tw-outline-none focus-visible:!tw-ring-1 focus-visible:!tw-ring-ring placeholder:tw-text-sm tw-flex tw-w-full tw-shadow-sm placeholder:tw-text-muted disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+            disabled=""
+            value="Ollama"
+          />
+        </div>
+        <div class="tw-space-y-2">
+          <label
+            class="tw-text-sm tw-font-medium tw-leading-none peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70"
+            >Base URL
+          </label>
+          <p class="tw-text-sm tw-text-muted">Leave it blank, unless you are using a proxy.</p>
+          <input
+            type="text"
+            class="!tw-h-9 !tw-min-w-[50px] !tw-rounded-md !tw-border tw-border-solid tw-border-border !tw-bg-transparent !tw-px-3 !tw-py-1 !tw-text-sm !tw-transition-colors md:!tw-text-base focus-visible:!tw-shadow-sm focus-visible:!tw-outline-none focus-visible:!tw-ring-1 focus-visible:!tw-ring-ring placeholder:tw-text-sm tw-flex tw-w-full tw-shadow-sm placeholder:tw-text-muted disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+            placeholder="http://localhost:11434/v1/"
+            value="https://ollama.com"
+          />
+        </div>
+        <div class="tw-space-y-2">
+          <label
+            class="tw-text-sm tw-font-medium tw-leading-none peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70"
+            >API Key
+          </label>
+          <div class="tw-relative">
+            <input
+              type="password"
+              class="!tw-h-9 !tw-min-w-[50px] !tw-rounded-md !tw-border tw-border-solid tw-border-border !tw-bg-transparent !tw-px-3 !tw-py-1 !tw-text-sm !tw-transition-colors md:!tw-text-base focus-visible:!tw-shadow-sm focus-visible:!tw-outline-none focus-visible:!tw-ring-1 focus-visible:!tw-ring-ring placeholder:tw-text-sm tw-flex tw-shadow-sm placeholder:tw-text-muted disabled:tw-cursor-not-allowed disabled:tw-opacity-50 tw-w-full !tw-pr-7"
+              placeholder="Enter Ollama API Key"
+            />
+            <div
+              class="tw-absolute tw-inset-y-0 tw-right-2 tw-flex tw-items-center tw-justify-center tw-cursor-pointer"
+              role="button"
+              aria-label="Show password"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-eye tw-size-3.5 tw-text-muted/60 hover:tw-text-accent tw-transition-colors tw-duration-200"
+              >
+                <path
+                  d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+                ></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="tw-space-y-2">
+          <label
+            class="tw-text-sm tw-font-medium tw-leading-none peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70"
+            ><div class="tw-flex tw-items-center tw-gap-1.5">
+              <span class="tw-leading-none">Model Capabilities</span
+              ><button
+                class="tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-rounded-md tw-text-xs tw-inline-flex tw-size-6 tw-items-center tw-justify-center tw-p-0 hover:tw-bg-transparent hover:tw-text-normal"
+                data-state="closed"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-circle-help tw-size-4"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <path d="M12 17h.01"></path>
+                </svg>
+              </button>
+            </div>
+          </label>
+          <div class="tw-flex tw-items-center tw-gap-4">
+            <div class="tw-flex tw-items-center tw-gap-2">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked="true"
+                data-state="checked"
+                value="on"
+                class="tw-border-solid !tw-bg-transparent tw-p-0 !tw-shadow tw-transition-colors hover:!tw-bg-interactive-accent hover:!tw-text-on-accent data-[state=checked]:!tw-bg-interactive-accent data-[state=checked]:!tw-text-on-accent tw-peer tw-size-4 tw-shrink-0 tw-rounded-sm tw-border tw-border-interactive-accent focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+                id="reasoning"
+              >
+                <span
+                  data-state="checked"
+                  class="tw-flex tw-items-center tw-justify-center tw-text-current"
+                  style="pointer-events: none"
+                  ><svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-check tw-size-4"
+                  >
+                    <path d="M20 6 9 17l-5-5"></path></svg
+                ></span>
+              </button>
+              <div class="tw-cursor-pointer" data-state="closed">
+                <label
+                  class="tw-font-medium peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70 tw-text-sm"
+                  for="reasoning"
+                  >Reasoning</label
+                >
+              </div>
+            </div>
+            <div class="tw-flex tw-items-center tw-gap-2">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked="false"
+                data-state="unchecked"
+                value="on"
+                class="tw-border-solid !tw-bg-transparent tw-p-0 !tw-shadow tw-transition-colors hover:!tw-bg-interactive-accent hover:!tw-text-on-accent data-[state=checked]:!tw-bg-interactive-accent data-[state=checked]:!tw-text-on-accent tw-peer tw-size-4 tw-shrink-0 tw-rounded-sm tw-border tw-border-interactive-accent focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+                id="vision"
+              ></button>
+              <div class="tw-cursor-pointer" data-state="closed">
+                <label
+                  class="tw-font-medium peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70 tw-text-sm"
+                  for="vision"
+                  >Vision</label
+                >
+              </div>
+            </div>
+            <div class="tw-flex tw-items-center tw-gap-2">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked="true"
+                data-state="checked"
+                value="on"
+                class="tw-border-solid !tw-bg-transparent tw-p-0 !tw-shadow tw-transition-colors hover:!tw-bg-interactive-accent hover:!tw-text-on-accent data-[state=checked]:!tw-bg-interactive-accent data-[state=checked]:!tw-text-on-accent tw-peer tw-size-4 tw-shrink-0 tw-rounded-sm tw-border tw-border-interactive-accent focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-cursor-not-allowed disabled:tw-opacity-50"
+                id="websearch"
+              >
+                <span
+                  data-state="checked"
+                  class="tw-flex tw-items-center tw-justify-center tw-text-current"
+                  style="pointer-events: none"
+                  ><svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-check tw-size-4"
+                  >
+                    <path d="M20 6 9 17l-5-5"></path></svg
+                ></span>
+              </button>
+              <div class="tw-cursor-pointer" data-state="closed">
+                <label
+                  class="tw-font-medium peer-disabled:tw-cursor-not-allowed peer-disabled:tw-opacity-70 tw-text-sm"
+                  for="websearch"
+                  >Websearch</label
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tw-space-y-4">
+          <div class="tw-space-y-2">
+            <div class="tw-space-y-3">
+              <div class="tw-flex tw-items-center tw-justify-between">
+                <div class="tw-flex tw-items-center tw-gap-2">
+                  <span class="tw-font-medium tw-text-normal">Token limit</span
+                  ><button
+                    class="tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-rounded-md tw-text-xs tw-inline-flex tw-items-center tw-justify-center tw-p-0 hover:tw-bg-transparent hover:tw-text-normal tw-size-4 tw-text-muted"
+                    data-state="closed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-circle-help tw-size-4"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <path d="M12 17h.01"></path>
+                    </svg>
+                  </button>
+                </div>
+                <div class="tw-flex tw-items-center tw-gap-0">
+                  <span class="tw-min-w-8 tw-text-right tw-font-mono tw-text-sm tw-text-normal"
+                    >32000</span
+                  >
+                </div>
+              </div>
+              <div class="tw-relative">
+                <span
+                  dir="ltr"
+                  data-orientation="horizontal"
+                  aria-disabled="false"
+                  class="tw-relative tw-flex tw-touch-none tw-select-none tw-items-center tw-w-full"
+                  style="--radix-slider-thumb-transform: translateX(-50%)"
+                  ><span
+                    data-orientation="horizontal"
+                    class="tw-relative tw-h-1.5 tw-w-full tw-grow tw-overflow-hidden tw-rounded-full tw-border tw-border-solid tw-bg-interactive-accent/20 tw-border-interactive-accent/30"
+                    ><span
+                      data-orientation="horizontal"
+                      class="tw-absolute tw-h-full tw-bg-interactive-accent"
+                      style="left: 0%; right: 75.0586%"
+                    ></span></span
+                  ><span
+                    style="
+                      transform: var(--radix-slider-thumb-transform);
+                      position: absolute;
+                      left: calc(24.9414% + 4.00938px);
+                    "
+                    ><span
+                      role="slider"
+                      aria-valuemin="100"
+                      aria-valuemax="128000"
+                      aria-orientation="horizontal"
+                      data-orientation="horizontal"
+                      tabindex="0"
+                      class="tw-block tw-size-4 tw-rounded-full tw-border tw-bg-toggle-thumb tw-shadow tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50"
+                      data-radix-collection-item=""
+                      aria-valuenow="32000"
+                      style=""
+                    ></span></span
+                ></span>
+              </div>
+            </div>
+          </div>
+          <div class="tw-space-y-2">
+            <div class="tw-space-y-3">
+              <div class="tw-flex tw-items-center tw-justify-between">
+                <div class="tw-flex tw-items-center tw-gap-2">
+                  <span class="tw-font-medium tw-text-normal">Temperature</span
+                  ><button
+                    class="tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-rounded-md tw-text-xs tw-inline-flex tw-items-center tw-justify-center tw-p-0 hover:tw-bg-transparent hover:tw-text-normal tw-size-4 tw-text-muted"
+                    data-state="closed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-circle-help tw-size-4"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <path d="M12 17h.01"></path>
+                    </svg>
+                  </button>
+                </div>
+                <div class="tw-flex tw-items-center tw-gap-0">
+                  <span class="tw-min-w-8 tw-text-right tw-font-mono tw-text-sm tw-text-normal"
+                    >0.1</span
+                  >
+                </div>
+              </div>
+              <div class="tw-relative">
+                <span
+                  dir="ltr"
+                  data-orientation="horizontal"
+                  aria-disabled="false"
+                  class="tw-relative tw-flex tw-touch-none tw-select-none tw-items-center tw-w-full"
+                  style="--radix-slider-thumb-transform: translateX(-50%)"
+                  ><span
+                    data-orientation="horizontal"
+                    class="tw-relative tw-h-1.5 tw-w-full tw-grow tw-overflow-hidden tw-rounded-full tw-border tw-border-solid tw-bg-interactive-accent/20 tw-border-interactive-accent/30"
+                    ><span
+                      data-orientation="horizontal"
+                      class="tw-absolute tw-h-full tw-bg-interactive-accent"
+                      style="left: 0%; right: 95%"
+                    ></span></span
+                  ><span
+                    style="
+                      transform: var(--radix-slider-thumb-transform);
+                      position: absolute;
+                      left: calc(5% + 7.2px);
+                    "
+                    ><span
+                      role="slider"
+                      aria-valuemin="0"
+                      aria-valuemax="2"
+                      aria-orientation="horizontal"
+                      data-orientation="horizontal"
+                      tabindex="0"
+                      class="tw-block tw-size-4 tw-rounded-full tw-border tw-bg-toggle-thumb tw-shadow tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50"
+                      data-radix-collection-item=""
+                      aria-valuenow="0.1"
+                      style=""
+                    ></span></span
+                ></span>
+              </div>
+            </div>
+          </div>
+          <div class="tw-space-y-2">
+            <div class="tw-space-y-3">
+              <div class="tw-flex tw-items-center tw-justify-between">
+                <div class="tw-flex tw-items-center tw-gap-2">
+                  <span class="tw-font-medium tw-text-muted">Top-P</span
+                  ><button
+                    class="tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-rounded-md tw-text-xs tw-inline-flex tw-items-center tw-justify-center tw-p-0 hover:tw-bg-transparent hover:tw-text-normal tw-size-4 tw-text-muted"
+                    data-state="closed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-circle-help tw-size-4"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <path d="M12 17h.01"></path>
+                    </svg>
+                  </button>
+                </div>
+                <div class="tw-flex tw-items-center tw-gap-3">
+                  <span class="tw-min-w-8 tw-text-right tw-font-mono tw-text-sm tw-text-muted"
+                    >—</span
+                  ><button
+                    class="tw-inline-flex tw-items-center tw-justify-center tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-outline-none hover:tw-bg-transparent hover:tw-bg-opacity-100 focus-visible:tw-text-normal focus-visible:tw-outline-none focus-visible:tw-ring-0 tw-rounded-md tw-text-xs tw-size-8 tw-p-0 tw-text-muted hover:tw-text-normal"
+                    data-state="closed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-zap-off tw-size-4"
+                    >
+                      <path d="M10.513 4.856 13.12 2.17a.5.5 0 0 1 .86.46l-1.377 4.317"></path>
+                      <path d="M15.656 10H20a1 1 0 0 1 .78 1.63l-1.72 1.773"></path>
+                      <path
+                        d="M16.273 16.273 10.88 21.83a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14H4a1 1 0 0 1-.78-1.63l4.507-4.643"
+                      ></path>
+                      <path d="m2 2 20 20"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="tw-relative">
+                <span
+                  dir="ltr"
+                  data-orientation="horizontal"
+                  aria-disabled="true"
+                  data-disabled=""
+                  class="tw-relative tw-flex tw-touch-none tw-select-none tw-items-center tw-w-full tw-opacity-40"
+                  style="--radix-slider-thumb-transform: translateX(-50%)"
+                  ><span
+                    data-disabled=""
+                    data-orientation="horizontal"
+                    class="tw-relative tw-h-1.5 tw-w-full tw-grow tw-overflow-hidden tw-rounded-full tw-border tw-border-solid tw-bg-interactive-accent/20 tw-border-interactive-accent/30"
+                    ><span
+                      data-orientation="horizontal"
+                      data-disabled=""
+                      class="tw-absolute tw-h-full tw-bg-interactive-accent"
+                      style="left: 0%; right: 100%"
+                    ></span></span
+                  ><span
+                    style="
+                      transform: var(--radix-slider-thumb-transform);
+                      position: absolute;
+                      left: calc(0% + 8px);
+                    "
+                    ><span
+                      role="slider"
+                      aria-valuemin="0"
+                      aria-valuemax="1"
+                      aria-orientation="horizontal"
+                      data-orientation="horizontal"
+                      data-disabled=""
+                      class="tw-block tw-size-4 tw-rounded-full tw-border tw-bg-toggle-thumb tw-shadow tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50"
+                      data-radix-collection-item=""
+                      aria-valuenow="0"
+                      style=""
+                    ></span></span
+                ></span>
+                <div class="tw-absolute tw-inset-0 tw-cursor-not-allowed tw-rounded"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tw-space-y-2">
+            <div class="tw-space-y-3">
+              <div class="tw-flex tw-items-center tw-justify-between">
+                <div class="tw-flex tw-items-center tw-gap-2">
+                  <span class="tw-font-medium tw-text-muted">Frequency Penalty</span
+                  ><button
+                    class="tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-rounded-md tw-text-xs tw-inline-flex tw-items-center tw-justify-center tw-p-0 hover:tw-bg-transparent hover:tw-text-normal tw-size-4 tw-text-muted"
+                    data-state="closed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-circle-help tw-size-4"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                      <path d="M12 17h.01"></path>
+                    </svg>
+                  </button>
+                </div>
+                <div class="tw-flex tw-items-center tw-gap-3">
+                  <span class="tw-min-w-8 tw-text-right tw-font-mono tw-text-sm tw-text-muted"
+                    >—</span
+                  ><button
+                    class="tw-inline-flex tw-items-center tw-justify-center tw-gap-1 tw-whitespace-nowrap tw-font-medium tw-transition-colors focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 clickable-icon tw-bg-transparent tw-outline-none hover:tw-bg-transparent hover:tw-bg-opacity-100 focus-visible:tw-text-normal focus-visible:tw-outline-none focus-visible:tw-ring-0 tw-rounded-md tw-text-xs tw-size-8 tw-p-0 tw-text-muted hover:tw-text-normal"
+                    data-state="closed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-zap-off tw-size-4"
+                    >
+                      <path d="M10.513 4.856 13.12 2.17a.5.5 0 0 1 .86.46l-1.377 4.317"></path>
+                      <path d="M15.656 10H20a1 1 0 0 1 .78 1.63l-1.72 1.773"></path>
+                      <path
+                        d="M16.273 16.273 10.88 21.83a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14H4a1 1 0 0 1-.78-1.63l4.507-4.643"
+                      ></path>
+                      <path d="m2 2 20 20"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="tw-relative">
+                <span
+                  dir="ltr"
+                  data-orientation="horizontal"
+                  aria-disabled="true"
+                  data-disabled=""
+                  class="tw-relative tw-flex tw-touch-none tw-select-none tw-items-center tw-w-full tw-opacity-40"
+                  style="--radix-slider-thumb-transform: translateX(-50%)"
+                  ><span
+                    data-disabled=""
+                    data-orientation="horizontal"
+                    class="tw-relative tw-h-1.5 tw-w-full tw-grow tw-overflow-hidden tw-rounded-full tw-border tw-border-solid tw-bg-interactive-accent/20 tw-border-interactive-accent/30"
+                    ><span
+                      data-orientation="horizontal"
+                      data-disabled=""
+                      class="tw-absolute tw-h-full tw-bg-interactive-accent"
+                      style="left: 0%; right: 100%"
+                    ></span></span
+                  ><span
+                    style="
+                      transform: var(--radix-slider-thumb-transform);
+                      position: absolute;
+                      left: calc(0% + 8px);
+                    "
+                    ><span
+                      role="slider"
+                      aria-valuemin="0"
+                      aria-valuemax="2"
+                      aria-orientation="horizontal"
+                      data-orientation="horizontal"
+                      data-disabled=""
+                      class="tw-block tw-size-4 tw-rounded-full tw-border tw-bg-toggle-thumb tw-shadow tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50"
+                      data-radix-collection-item=""
+                      aria-valuenow="0"
+                      style=""
+                    ></span></span
+                ></span>
+                <div class="tw-absolute tw-inset-0 tw-cursor-not-allowed tw-rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tw-mt-6 tw-flex tw-justify-end tw-gap-2 tw-border-t tw-border-border tw-pt-4">
+        <button
+          class="tw-inline-flex tw-items-center tw-justify-center tw-gap-1 tw-whitespace-nowrap tw-rounded-md tw-text-sm tw-font-medium tw-transition-colors focus-visible:tw-outline-none focus-visible:tw-ring-1 focus-visible:tw-ring-ring disabled:tw-pointer-events-none disabled:tw-opacity-50 [&amp;_svg]:tw-shrink-0 tw-bg-secondary tw-text-normal tw-shadow-sm hover:tw-bg-interactive-hover tw-h-9 tw-px-4 tw-py-2"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
