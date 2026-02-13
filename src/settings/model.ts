@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { type ChainType } from "@/chainFactory";
 import { type SortStrategy, isSortStrategy } from "@/utils/recentUsageManager";
+import { isGptOssModel, isOllamaCloudEndpoint } from "@/utils/ollamaUtils";
 import {
   BUILTIN_CHAT_MODELS,
   BUILTIN_EMBEDDING_MODELS,
@@ -519,6 +520,25 @@ export function sanitizeSettings(settings: CopilotSettings): CopilotSettings {
       : DEFAULT_SETTINGS.userSystemPromptsFolder;
 
   sanitizedSettings.qaExclusions = sanitizeQaExclusions(settingsToSanitize.qaExclusions);
+
+  // Migration: Apply GPT-OSS defaults to existing models that don't have them
+  if (sanitizedSettings.activeModels) {
+    sanitizedSettings.activeModels = sanitizedSettings.activeModels.map((model) => {
+      // Only apply defaults for GPT-OSS models on Ollama Cloud that don't already have values
+      if (
+        model.provider === ChatModelProviders.OLLAMA &&
+        isGptOssModel(model.name) &&
+        isOllamaCloudEndpoint(model.baseUrl)
+      ) {
+        return {
+          ...model,
+          ollamaThinkingLevel: model.ollamaThinkingLevel ?? "medium",
+          enableOllamaWebSearch: model.enableOllamaWebSearch ?? true,
+        };
+      }
+      return model;
+    });
+  }
 
   return sanitizedSettings;
 }

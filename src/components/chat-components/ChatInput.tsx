@@ -5,6 +5,7 @@ import {
   useChainType,
   useModelKey,
   useProjectLoading,
+  CustomModel,
 } from "@/aiParams";
 import { ChainType } from "@/chainFactory";
 import { AddImageModal } from "@/components/modals/AddImageModal";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ModelSelector } from "@/components/ui/ModelSelector";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChatToolControls } from "./ChatToolControls";
+import { OllamaCloudControls } from "./OllamaCloudControls";
 import { isPlusChain } from "@/utils";
 import {
   mergeWebTabContexts,
@@ -19,7 +21,7 @@ import {
   normalizeWebTabContext,
 } from "@/utils/urlNormalization";
 
-import { useSettingsValue } from "@/settings/model";
+import { useSettingsValue, getSettings, updateSetting } from "@/settings/model";
 import { SelectedTextContext, WebTabContext } from "@/types/message";
 import { isAllowedFileForNoteContext } from "@/utils";
 import { CornerDownLeft, Image, Loader2, StopCircle, X } from "lucide-react";
@@ -117,6 +119,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [currentChain] = useChainType();
   const [isProjectLoading] = useProjectLoading();
   const settings = useSettingsValue();
+
+  // Get current model for Ollama Cloud controls
+  const currentModel = useMemo(() => {
+    return settings.activeModels.find((m) => `${m.name}|${m.provider}` === currentModelKey);
+  }, [settings.activeModels, currentModelKey]);
   const [currentActiveNote, setCurrentActiveNote] = useState<TFile | null>(() => {
     const activeFile = app.workspace.getActiveFile();
     return isAllowedFileForNoteContext(activeFile) ? activeFile : null;
@@ -154,6 +161,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
       }));
     });
   };
+
+  /**
+   * Update handler for Ollama Cloud GPT-OSS settings
+   * Immediately saves changes to settings (no debounce)
+   */
+  const handleOllamaUpdate = useCallback(
+    (updates: Partial<CustomModel>) => {
+      const settings = getSettings();
+      const updatedModels = settings.activeModels.map((m) =>
+        `${m.name}|${m.provider}` === currentModelKey ? { ...m, ...updates } : m
+      );
+      updateSetting("activeModels", updatedModels);
+    },
+    [currentModelKey]
+  );
 
   // Toggle states for vault, web search, composer, and autonomous agent
   const [vaultToggle, setVaultToggle] = useState(false);
@@ -798,7 +820,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <span>Generating...</span>
           </div>
         ) : (
-          <div className="tw-min-w-0 tw-flex-1">
+          <div className="tw-flex tw-min-w-0 tw-flex-1 tw-items-center tw-gap-2">
             <ModelSelector
               variant="ghost2"
               size="fit"
@@ -813,6 +835,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
               }}
               className="tw-max-w-full tw-truncate"
             />
+            {currentModel && (
+              <OllamaCloudControls
+                model={currentModel}
+                onUpdate={handleOllamaUpdate}
+                disabled={false}
+              />
+            )}
           </div>
         )}
 

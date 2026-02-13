@@ -1,4 +1,4 @@
-import { CustomModel } from "@/aiParams";
+import { CustomModel, OllamaThinkingLevel } from "@/aiParams";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SettingSwitch } from "@/components/ui/setting-switch";
+import { isGptOssModel, isOllamaCloudEndpoint } from "@/utils/ollamaUtils";
 import {
   ChatModelProviders,
   EmbeddingModelProviders,
@@ -174,6 +176,8 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
   };
 
   const [model, setModel] = useState<CustomModel>(getInitialModel());
+  const [ollamaThinkingLevel, setOllamaThinkingLevel] = useState<OllamaThinkingLevel>("medium");
+  const [enableOllamaWebSearch, setEnableOllamaWebSearch] = useState<boolean>(true);
 
   /**
    * Updates model state and resets verify status when connection-related fields change.
@@ -222,7 +226,11 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
     }
 
     const cleanedModel = getCleanedModel(model);
-    onAdd(cleanedModel);
+    const isGptOssCloud = isGptOssModel(model.name) && isOllamaCloudEndpoint(model.baseUrl);
+    const finalModel = isGptOssCloud
+      ? { ...cleanedModel, ollamaThinkingLevel, enableOllamaWebSearch }
+      : cleanedModel;
+    onAdd(finalModel);
     onOpenChange(false);
     setModel(getInitialModel());
     clearErrors();
@@ -666,6 +674,50 @@ export const ModelAddDialog: React.FC<ModelAddDialogProps> = ({
           )}
 
           {renderProviderSpecificFields()}
+
+          {/* GPT-OSS Defaults Section */}
+          {!isEmbeddingModel &&
+            model.provider === ChatModelProviders.OLLAMA &&
+            isGptOssModel(model.name) &&
+            isOllamaCloudEndpoint(model.baseUrl) && (
+              <div className="tw-rounded-lg tw-border tw-p-3 tw-bg-secondary/30 tw-border-border/60">
+                <div className="tw-mb-3 tw-text-sm tw-font-medium">GPT-OSS Defaults</div>
+                <div className="tw-space-y-3">
+                  <FormField
+                    label="Default Thinking Level"
+                    description="Controls reasoning depth (affects response time)"
+                  >
+                    <Select
+                      value={ollamaThinkingLevel}
+                      onValueChange={(value: OllamaThinkingLevel) => setOllamaThinkingLevel(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label="Enable Web Search by Default"
+                    description="Allows model to search the web for information"
+                  >
+                    <div className="tw-flex tw-items-center tw-gap-2">
+                      <SettingSwitch
+                        checked={enableOllamaWebSearch}
+                        onCheckedChange={setEnableOllamaWebSearch}
+                      />
+                      <span className="tw-text-sm tw-text-muted">
+                        {enableOllamaWebSearch ? "Enabled" : "Disabled"}
+                      </span>
+                    </div>
+                  </FormField>
+                </div>
+              </div>
+            )}
         </div>
 
         <div className="tw-flex tw-flex-col tw-gap-3 sm:tw-flex-row sm:tw-items-center sm:tw-justify-between">

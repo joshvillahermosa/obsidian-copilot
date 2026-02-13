@@ -1,10 +1,18 @@
-import { CustomModel } from "@/aiParams";
+import { CustomModel, OllamaThinkingLevel } from "@/aiParams";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { SettingSwitch } from "@/components/ui/setting-switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { HelpTooltip } from "@/components/ui/help-tooltip";
 import {
@@ -17,6 +25,7 @@ import {
 } from "@/constants";
 import { getSettings } from "@/settings/model";
 import { debounce, getProviderInfo, getProviderLabel } from "@/utils";
+import { isGptOssModel, isOllamaCloudEndpoint } from "@/utils/ollamaUtils";
 import { getApiKeyForProvider } from "@/utils/modelUtils";
 import { App, Modal, Platform } from "obsidian";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -119,7 +128,13 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
     localModel.provider as SettingKeyProviders,
     localModel
   );
-  const showOtherParameters = !isEmbeddingModel && localModel.provider !== EmbeddingModelProviders.COPILOT_PLUS_JINA;
+  const showOtherParameters =
+    !isEmbeddingModel && localModel.provider !== EmbeddingModelProviders.COPILOT_PLUS_JINA;
+  const isGptOssCloud =
+    !isEmbeddingModel &&
+    localModel.provider === ChatModelProviders.OLLAMA &&
+    isGptOssModel(localModel.name) &&
+    isOllamaCloudEndpoint(localModel.baseUrl);
 
   return (
     <div className="tw-space-y-3 tw-p-4">
@@ -255,6 +270,51 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
               onReset={handleLocalReset}
               showTokenLimit={true}
             />
+
+            {/* GPT-OSS Settings Section */}
+            {isGptOssCloud && (
+              <div className="tw-rounded-lg tw-border tw-p-3 tw-bg-secondary/30 tw-border-border/60">
+                <div className="tw-mb-3 tw-text-sm tw-font-medium">GPT-OSS Settings</div>
+                <div className="tw-space-y-3">
+                  <FormField
+                    label="Thinking Level"
+                    description="Controls reasoning depth (affects response time)"
+                  >
+                    <Select
+                      value={localModel.ollamaThinkingLevel || "medium"}
+                      onValueChange={(value: OllamaThinkingLevel) =>
+                        handleLocalUpdate("ollamaThinkingLevel", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField
+                    label="Enable Web Search"
+                    description="Allows model to search the web for information"
+                  >
+                    <div className="tw-flex tw-items-center tw-gap-2">
+                      <SettingSwitch
+                        checked={localModel.enableOllamaWebSearch ?? true}
+                        onCheckedChange={(checked) =>
+                          handleLocalUpdate("enableOllamaWebSearch", checked)
+                        }
+                      />
+                      <span className="tw-text-sm tw-text-muted">
+                        {(localModel.enableOllamaWebSearch ?? true) ? "Enabled" : "Disabled"}
+                      </span>
+                    </div>
+                  </FormField>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
