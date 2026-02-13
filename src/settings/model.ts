@@ -8,6 +8,7 @@ import { isGptOssModel, isOllamaCloudEndpoint } from "@/utils/ollamaUtils";
 import {
   BUILTIN_CHAT_MODELS,
   BUILTIN_EMBEDDING_MODELS,
+  ChatModelProviders,
   COPILOT_FOLDER_ROOT,
   DEFAULT_OPEN_AREA,
   DEFAULT_QA_EXCLUSIONS_SETTING,
