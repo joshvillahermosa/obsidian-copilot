@@ -7,6 +7,7 @@ import { logError, logWarn } from "@/logger";
 import { parseModelsResponse, StandardModel } from "@/settings/providerModels";
 import { err2String, getProviderInfo, safeFetch } from "@/utils";
 import { getApiKeyForProvider } from "@/utils/modelUtils";
+import { isGptOssModel, isOllamaCloudEndpoint } from "@/utils/ollamaUtils";
 
 export interface FetchModelsResult {
   success: boolean;
@@ -134,12 +135,15 @@ export async function verifyAndAddModel(
       ? undefined
       : getApiKeyForProvider(model.provider);
 
-  const customModel: CustomModel = {
+  let customModel: CustomModel = {
     name: model.name,
     provider: model.provider,
     apiKey,
     enabled: true,
   };
+
+  // Apply GPT-OSS defaults if applicable
+  customModel = applyGptOssDefaults(customModel);
 
   // Verify model if not skipped
   let verificationFailed = false;
@@ -164,14 +168,42 @@ export async function verifyAndAddModel(
 }
 
 /**
+ * Apply GPT-OSS defaults to a model if applicable
+ * @param model - The model to apply defaults to
+ * @returns The model with GPT-OSS defaults applied if applicable
+ */
+export function applyGptOssDefaults(model: CustomModel): CustomModel {
+  // Only apply defaults for GPT-OSS models on Ollama Cloud
+  if (
+    model.provider === ChatModelProviders.OLLAMA &&
+    isGptOssModel(model.name) &&
+    isOllamaCloudEndpoint(model.baseUrl)
+  ) {
+    return {
+      ...model,
+      ollamaThinkingLevel: model.ollamaThinkingLevel ?? "medium",
+      enableOllamaWebSearch: model.enableOllamaWebSearch ?? true,
+    };
+  }
+  return model;
+}
+
+/**
  * Build CustomModel object for adding to activeModels
  */
-export function buildCustomModel(
-  model: { id: string; name: string; provider: SettingKeyProviders }
-): CustomModel {
-  return {
+export function buildCustomModel(model: {
+  id: string;
+  name: string;
+  provider: SettingKeyProviders;
+  baseUrl?: string;
+}): CustomModel {
+  const customModel: CustomModel = {
     name: model.name,
     provider: model.provider,
     enabled: true,
+    ...(model.baseUrl ? { baseUrl: model.baseUrl } : {}),
   };
+
+  // Apply GPT-OSS defaults if applicable
+  return applyGptOssDefaults(customModel);
 }

@@ -7,6 +7,8 @@ import { settingsAtom, settingsStore } from "@/settings/model";
 import { SelectedTextContext } from "@/types/message";
 import { atom, useAtom } from "jotai";
 
+export type OllamaThinkingLevel = "low" | "medium" | "high";
+
 const userModelKeyAtom = atom<string | null>(null);
 const modelKeyAtom = atom(
   (get) => {
@@ -150,7 +152,7 @@ export interface CustomModel {
   bedrockRegion?: string;
 
   // Ollama GPT-OSS specific fields
-  ollamaThinkingLevel?: "low" | "medium" | "high";
+  ollamaThinkingLevel?: OllamaThinkingLevel;
   enableOllamaWebSearch?: boolean;
 
   // OpenAI GPT-5 and O-series specific fields
