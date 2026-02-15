@@ -53,6 +53,36 @@ In the case of Copilot for Obsidian, you will need to:
 
 Try to be descriptive in your branch names and pull requests. Happy coding!
 
+### Commit Message Convention
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) for automated releases. Please follow these guidelines when writing commit messages:
+
+- `feat: description` - New features (triggers a **minor** version bump, e.g., 1.2.0 → 1.3.0)
+- `fix: description` - Bug fixes (triggers a **patch** version bump, e.g., 1.2.0 → 1.2.1)
+- `feat!: description` or with `BREAKING CHANGE:` in the footer - Breaking changes (triggers a **major** version bump, e.g., 1.2.0 → 2.0.0)
+- `docs:`, `chore:`, `style:`, `refactor:`, `test:` - Other changes (no version bump)
+
+**Examples:**
+```bash
+# Minor version bump
+git commit -m "feat: add new chat feature"
+
+# Patch version bump
+git commit -m "fix: resolve memory leak in chat"
+
+# Major version bump
+git commit -m "feat!: change API interface"
+```
+
+When your PR is merged to `master` or `main`, our automated release workflow will:
+1. Analyze your commit message
+2. Determine the version bump
+3. Build the plugin
+4. Create a GitHub release with artifacts
+5. Update the changelog
+
+For more details, see [docs/RELEASE.md](docs/RELEASE.md).
+
 ## Prompt Testing
 
 If you are making prompt changes, make sure to run the integration tests using the following steps:
